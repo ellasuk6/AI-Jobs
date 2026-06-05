@@ -2,8 +2,6 @@
 
 ```js
 const dc_jobs_combined = FileAttachment("dc_jobs_combined.csv").csv({typed: true});
-
-
 ```
 
 Linear regression plotting documented facilities vs jobs per state
@@ -33,148 +31,140 @@ Plot.plot({
 One part of data from brockovich (https://brockovichdatacenter.com/index.html)
 
 ```js
-Inputs.table("AI By State.csv")
+const aiByState = FileAttachment("AI By State.csv").csv({typed: true});
+```
 
+```js echo
+Inputs.table(aiByState)
 ```
 
 Data from https://www.visualcapitalist.com/ranked-states-by-ai-data-center-jobs/
 
-```table echo
-```
-
 ## Data centers & job growth by state
-
 
 ```js
 const dcJobs = FileAttachment("dcJobs.csv").csv({typed: true});
-
 ```
 
 ```js echo
-viewof selectedView = Inputs.radio(
+const selectedView = view(Inputs.radio(
   ["Facilities vs jobs", "Top states — stacked", "Growth leaders"],
   {value: "Facilities vs jobs", label: "Chart view"}
-)
+))
 ```
 
 ```js
 {
   const sorted = [...dcJobs].sort((a, b) =>
     (b.jobs + b.newJobs) - (a.jobs + a.newJobs)
-  )
-  const top20 = sorted.slice(0, 20)
+  );
+  const top20 = sorted.slice(0, 20);
 
-  if (selectedView === "Facilities vs jobs") {
-    return Plot.plot({
-      title: "Data center facilities vs current AI jobs by state",
-      width,
-      height: 420,
-      marginLeft: 60,
-      x: { label: "Total data center facilities →", grid: true },
-      y: { label: "↑ Current AI/DC jobs (BLS 2025)", grid: true,
-           tickFormat: d => d >= 1000 ? (d/1000) + "k" : d },
-      marks: [
-        Plot.dot(dcJobs.filter(d => d.fac > 0), {
-          x: "fac",
-          y: "jobs",
-          r: d => 4 + d.newJobs / 8000,
-          fill: "#378ADD",
-          fillOpacity: 0.7,
-          stroke: "#185FA5",
-          strokeWidth: 1,
-          tip: true,
-          channels: {
-            State: "name",
-            "Current jobs": d => d.jobs.toLocaleString(),
-            "Projected new": d => "+" + d.newJobs.toLocaleString(),
-            Facilities: "fac"
-          }
-        }),
-        Plot.text(dcJobs.filter(d => d.fac >= 4 || d.jobs > 15000), {
-          x: "fac",
-          y: "jobs",
-          text: "st",
-          dy: -10,
-          fontSize: 10,
-          fill: "#444"
-        })
-      ]
-    })
-  }
+  const facilitiesChart = Plot.plot({
+    title: "Data center facilities vs current AI jobs by state",
+    width,
+    height: 420,
+    marginLeft: 60,
+    x: { label: "Total data center facilities →", grid: true },
+    y: {
+      label: "↑ Current AI/DC jobs (BLS 2025)", grid: true,
+      tickFormat: d => d >= 1000 ? (d/1000) + "k" : d
+    },
+    marks: [
+      Plot.dot(dcJobs.filter(d => d.fac > 0), {
+        x: "fac",
+        y: "jobs",
+        r: d => 4 + d.newJobs / 8000,
+        fill: "#378ADD",
+        fillOpacity: 0.7,
+        stroke: "#185FA5",
+        strokeWidth: 1,
+        tip: true,
+        channels: {
+          State: "name",
+          "Current jobs": d => d.jobs.toLocaleString(),
+          "Projected new": d => "+" + d.newJobs.toLocaleString(),
+          Facilities: "fac"
+        }
+      }),
+      Plot.text(dcJobs.filter(d => d.fac >= 4 || d.jobs > 15000), {
+        x: "fac",
+        y: "jobs",
+        text: "st",
+        dy: -10,
+        fontSize: 10,
+        fill: "#444"
+      })
+    ]
+  });
 
-  if (selectedView === "Top states — stacked") {
-    return Plot.plot({
-      title: "Current + projected AI/DC jobs — top 20 states",
-      width,
-      height: 520,
-      marginLeft: 100,
-      x: { label: "Jobs →", grid: true,
-           tickFormat: d => d >= 1000 ? (d/1000) + "k" : d },
-      y: { label: null },
-      color: { legend: true, domain: ["Current jobs", "Projected new"],
-               range: ["#378ADD", "#1D9E75"] },
-      marks: [
-        Plot.barX(top20.flatMap(d => [
-          { name: d.name, type: "Current jobs",    value: d.jobs    },
-          { name: d.name, type: "Projected new",   value: d.newJobs }
-        ]), {
-          x: "value",
-          y: "name",
-          fill: "type",
-          sort: { y: "-x" },
-          tip: true
-        })
-      ]
-    })
-  }
+  const stackedChart = Plot.plot({
+    title: "Current + projected AI/DC jobs — top 20 states",
+    width,
+    height: 520,
+    marginLeft: 100,
+    x: { label: "Jobs →", grid: true,
+         tickFormat: d => d >= 1000 ? (d/1000) + "k" : d },
+    y: { label: null },
+    color: { legend: true, domain: ["Current jobs", "Projected new"],
+             range: ["#378ADD", "#1D9E75"] },
+    marks: [
+      Plot.barX(top20.flatMap(d => [
+        { name: d.name, type: "Current jobs",  value: d.jobs    },
+        { name: d.name, type: "Projected new", value: d.newJobs }
+      ]), {
+        x: "value",
+        y: "name",
+        fill: "type",
+        sort: { y: "-x" },
+        tip: true
+      })
+    ]
+  });
 
-  if (selectedView === "Growth leaders") {
-    const growthStates = dcJobs
-      .filter(d => d.newJobs > 0 && d.jobs > 0)
-      .map(d => ({ ...d, growthPct: Math.round(d.newJobs / d.jobs * 100) }))
-      .sort((a, b) => b.growthPct - a.growthPct)
-      .slice(0, 15)
+  const growthStates = dcJobs
+    .filter(d => d.newJobs > 0 && d.jobs > 0)
+    .map(d => ({ ...d, growthPct: Math.round(d.newJobs / d.jobs * 100) }))
+    .sort((a, b) => b.growthPct - a.growthPct)
+    .slice(0, 15);
 
-    return Plot.plot({
-      title: "States with highest projected job growth % from data center buildout",
-      width,
-      height: 480,
-      marginLeft: 110,
-      x: { label: "Projected growth vs current base →", tickFormat: d => d + "%" },
-      y: { label: null },
-      marks: [
-        Plot.barX(growthStates, {
-          x: "growthPct",
-          y: "name",
-          fill: "#534AB7",
-          fillOpacity: 0.8,
-          sort: { y: "-x" },
-          tip: true,
-          channels: {
-            State: "name",
-            "Current jobs": d => d.jobs.toLocaleString(),
-            "Projected new": d => "+" + d.newJobs.toLocaleString(),
-            "Growth %": d => d.growthPct + "%"
-          }
-        }),
-        Plot.ruleX([0])
-      ]
-    })
-  }
+  const growthChart = Plot.plot({
+    title: "States with highest projected job growth % from data center buildout",
+    width,
+    height: 480,
+    marginLeft: 110,
+    x: { label: "Projected growth vs current base →", tickFormat: d => d + "%" },
+    y: { label: null },
+    marks: [
+      Plot.barX(growthStates, {
+        x: "growthPct",
+        y: "name",
+        fill: "#534AB7",
+        fillOpacity: 0.8,
+        sort: { y: "-x" },
+        tip: true,
+        channels: {
+          State: "name",
+          "Current jobs": d => d.jobs.toLocaleString(),
+          "Projected new": d => "+" + d.newJobs.toLocaleString(),
+          "Growth %": d => d.growthPct + "%"
+        }
+      }),
+      Plot.ruleX([0])
+    ]
+  });
+
+  selectedView === "Top states — stacked" ? stackedChart
+    : selectedView === "Growth leaders" ? growthChart
+    : facilitiesChart;
 }
 ```
 
-```js echo
-d3 = require("d3@7")
-```
+## AI jobs & data centers — interactive map
 
-```js echo
-topojson = require("topojson-client@3")
-```
-
-```js echo
-us = fetch("https://cdn.jsdelivr.net/npm/us-atlas@3/states-10m.json")
-      .then(r => r.json())
+```js
+import * as d3 from "npm:d3";
+import * as topojson from "npm:topojson-client";
 ```
 
 ```js
@@ -189,7 +179,7 @@ us = fetch("https://cdn.jsdelivr.net/npm/us-atlas@3/states-10m.json")
 
   const data = raw.map(d => {
     const abbr = d.state_abbr;
-    const jobs = d.current_jobs; // current jobs only
+    const jobs = d.current_jobs;
     const popK = pop[abbr] ?? null;
     return {
       state: abbrToName[abbr] ?? abbr,
@@ -200,8 +190,8 @@ us = fetch("https://cdn.jsdelivr.net/npm/us-atlas@3/states-10m.json")
       facilities_operational: d.facilities_operational ?? 0,
       facilities_construction: d.facilities_construction ?? 0,
       facilities_proposed: d.facilities_proposed ?? 0,
-      facilities_community: d.community_reports ?? 0, // treat reports count as "community" bubble
-      total_facilities: d.total_facilities + d.community_reports ?? 0
+      facilities_community: d.community_reports ?? 0,
+      total_facilities: (d.total_facilities ?? 0) + (d.community_reports ?? 0)
     };
   });
 
@@ -243,7 +233,6 @@ us = fetch("https://cdn.jsdelivr.net/npm/us-atlas@3/states-10m.json")
     return { fill: "#e2e8f0", stroke: "#cbd5e1" };
   }
 
-  // Taller legend strip so nothing clips
   const LEGEND_H = 120;
   const totalH = height + LEGEND_H;
 
@@ -259,7 +248,6 @@ us = fetch("https://cdn.jsdelivr.net/npm/us-atlas@3/states-10m.json")
     .style("padding", "5px 13px").style("background", "#121922").style("color", "#7d8a99")
     .style("transition", "background 0.18s, color 0.18s");
 
-  // Row 1: heatmap
   const row1 = container.append("div").style("margin-bottom", "7px")
     .style("display", "flex").style("gap", "8px").style("align-items", "center");
   row1.append("span").text("HEATMAP")
@@ -267,7 +255,6 @@ us = fetch("https://cdn.jsdelivr.net/npm/us-atlas@3/states-10m.json")
   const btnPer = mkBtn(row1, "Jobs per 100k");
   const btnTot = mkBtn(row1, "Total jobs");
 
-  // Row 2: bubble controls
   const row2 = container.append("div").style("margin-bottom", "10px")
     .style("display", "flex").style("gap", "8px").style("align-items", "center").style("flex-wrap","wrap");
   row2.append("span").text("BUBBLES")
@@ -322,12 +309,9 @@ us = fetch("https://cdn.jsdelivr.net/npm/us-atlas@3/states-10m.json")
 
   const bubbleG = svg.append("g");
 
-  // Legend groups
   const legY = height + 16;
   const bubbleLegG = svg.append("g").attr("transform", `translate(40,${legY})`);
   const rampG = svg.append("g").attr("transform", `translate(${width - 220},${legY})`);
-
-  // ---- RENDER ----
 
   function updateButtonStyles() {
     [[btnPer, "perCapita"], [btnTot, "jobs"]].forEach(([b, m]) => {
@@ -370,7 +354,6 @@ us = fetch("https://cdn.jsdelivr.net/npm/us-atlas@3/states-10m.json")
       .attr("stroke", stroke).attr("stroke-width", 1.1).style("cursor", "pointer")
       .on("mousemove", (e, o) => show(e, o.name)).on("mouseleave", hide);
 
-    // Bubble legend
     bubbleLegG.selectAll("*").remove();
 
     let legendLabel;
@@ -394,18 +377,18 @@ us = fetch("https://cdn.jsdelivr.net/npm/us-atlas@3/states-10m.json")
         ? [1, Math.round(maxVal/2), maxVal].filter((v,i,a) => a.indexOf(v)===i)
         : [1, Math.round(maxVal/2), maxVal];
 
-    const circleBaseY = 18 + maxR; // label height + max bubble radius = baseline for bottom-aligned circles
+    const circleBaseY = 18 + maxR;
     let bx = 0;
     samples.forEach(v => {
       const rad = r(v);
       bubbleLegG.append("circle")
         .attr("cx", bx + rad)
-        .attr("cy", circleBaseY + (maxR - rad)) // bottom-align all circles
+        .attr("cy", circleBaseY + (maxR - rad))
         .attr("r", rad)
         .attr("fill", fill).attr("fill-opacity", 0.34).attr("stroke", stroke);
       bubbleLegG.append("text")
         .attr("x", bx + rad)
-        .attr("y", circleBaseY + maxR + 13) // just below the largest possible circle
+        .attr("y", circleBaseY + maxR + 13)
         .attr("text-anchor", "middle")
         .attr("fill", "#7d8a99").attr("font-size", 9).text(v);
       bx += rad * 2 + 14;
@@ -445,7 +428,6 @@ us = fetch("https://cdn.jsdelivr.net/npm/us-atlas@3/states-10m.json")
     renderBubbles();
   }
 
-  // ---- EVENTS ----
   btnPer.on("click", () => { heatMode = "perCapita"; renderAll(); });
   btnTot.on("click", () => { heatMode = "jobs"; renderAll(); });
 
@@ -465,6 +447,6 @@ us = fetch("https://cdn.jsdelivr.net/npm/us-atlas@3/states-10m.json")
   });
 
   renderAll();
-  return container.node();
+  container.node();
 }
 ```
