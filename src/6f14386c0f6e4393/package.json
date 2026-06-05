@@ -1,0 +1,14 @@
+{
+  "name": "6f14386c0f6e4393",
+  "main": "6f14386c0f6e4393@163.js",
+  "version": "163.0.0",
+  "homepage": "https://observablehq.com/d/6f14386c0f6e4393",
+  "author": {
+    "name": "DATAVIS SUMMER",
+    "url": "https://observablehq.com/@dis-2026-summer"
+  },
+  "type": "module",
+  "peerDependencies": {
+    "@observablehq/runtime": "4 - 5"
+  }
+}
