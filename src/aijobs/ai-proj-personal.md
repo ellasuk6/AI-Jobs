@@ -66,6 +66,7 @@ const selectedView = view(Inputs.radio(
       width,
       height: 420,
       marginLeft: 60,
+      marginBottom: 40,
       x: { label: "Total data center facilities →", grid: true },
       y: {
         label: "↑ Current AI/DC jobs (BLS 2025)", grid: true,

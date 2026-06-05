@@ -4,8 +4,7 @@ toc: false
 
 <div class="hero">
   <h1>AI&#x27;s Impact on Jobs</h1>
-  <h2>Welcome to your new app! Edit&nbsp;<code style="font-size: 90%;">src/index.md</code> to change this page.</h2>
-  <h2>Does this work?</h2>
+  <h2>How Data Centers and AI are Changing Jobs As We Know It.</h2>
   <a href="https://observablehq.com/framework/getting-started">Get started<span style="display: inline-block; margin-left: 0.25rem;">↗︎</span></a>
 </div>
 
