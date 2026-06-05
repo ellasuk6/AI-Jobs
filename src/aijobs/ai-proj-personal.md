@@ -136,7 +136,7 @@ viewof selectedView = Inputs.radio(
       .slice(0, 15)
 
     return Plot.plot({
-      title: "States with highest projected job growth % from data center buildout",
+      title: "States with highest projected job growth % from data center",
       width,
       height: 480,
       marginLeft: 110,
