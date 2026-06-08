@@ -7,20 +7,29 @@ title: AI's Impact on Jobs
 <div class="hero">
   <h1>AI&#x27;s Impact on Jobs</h1>
   <h2>How Data Centers and AI are Changing Jobs As We Know It.</h2>
-  <a href="https://observablehq.com/framework/getting-started">Get started<span style="display: inline-block; margin-left: 0.25rem;">↗︎</span></a>
 </div>
-<div class = "card">
-
-
+<div class="grid grid-cols-3">
+  <div class = "card">
+    <h1>Why Explore This?</h1>
+    <p>Something data centers increasing employment something productivity smthn smthn</p>
+  </div>
+  <div class = "card">
+    <h1>Proof of Concept</h1>
+    <p>Something data centers increasing employment something productivity smthn smthn</p>
+  </div>
+  <div class = "card">
+    <h1>What to do with info</h1>
+    <p>Something data centers increasing employment something productivity smthn smthn</p>
+  </div>
 </div>
-  
+<div class="card">
 </div>
 
 ---
 
 ## Our Goal
 
-There has been a lot of discussion around AI stealing jobs or how AI will negatively impact employment. This project is to show how data centers and AI can have a positive impact on employment and the economy surrounding the environment.
+There has been a lot of discussion around AI replacing people's jobs or how AI will negatively impact employment. This project is to show how data centers and AI can have a positive impact on employment and the economy surrounding the environment.
 
 <div class="grid grid-cols-4">
   <div class="card">
