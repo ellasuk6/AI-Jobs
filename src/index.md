@@ -1,5 +1,7 @@
 ---
 toc: false
+theme: dashboard
+title: AI's Impact on Jobs
 ---
 
 <div class="hero">
@@ -7,41 +9,133 @@ toc: false
   <h2>How Data Centers and AI are Changing Jobs As We Know It.</h2>
   <a href="https://observablehq.com/framework/getting-started">Get started<span style="display: inline-block; margin-left: 0.25rem;">↗︎</span></a>
 </div>
+<div class = "card">
 
-<div class="grid grid-cols-2" style="grid-auto-rows: 504px;">
-  <div class="card">${
-    resize((width) => Plot.plot({
-      title: "Your awesomeness over time 🚀",
-      subtitle: "Up and to the right!",
+```js
+const dcJobs = await FileAttachment("dcJobs.csv").csv({typed: true});
+```
+
+```js 
+const selectedView = view(Inputs.radio(
+  ["Facilities vs jobs", "Top states — stacked", "Growth leaders"],
+  {value: "Facilities vs jobs", label: "Chart view"}
+))
+```
+
+```js
+{
+  const sorted = [...dcJobs].sort((a, b) =>
+    (b.jobs + b.newJobs) - (a.jobs + a.newJobs)
+  );
+  const top20 = sorted.slice(0, 20);
+
+  if (selectedView === "Facilities vs jobs") {
+    display(Plot.plot({
+      title: "Data center facilities vs current AI jobs by state",
       width,
-      y: {grid: true, label: "Awesomeness"},
+      height: 420,
+      marginLeft: 60,
+      marginBottom: 40,
+      x: { label: "Total data center facilities →", grid: true },
+      y: {
+        label: "↑ Current AI/DC jobs (BLS 2025)", grid: true,
+        tickFormat: d => d >= 1000 ? (d/1000) + "k" : d
+      },
       marks: [
-        Plot.ruleY([0]),
-        Plot.lineY(aapl, {x: "Date", y: "Close", tip: true})
+        Plot.dot(dcJobs.filter(d => d.fac > 0), {
+          x: "fac",
+          y: "jobs",
+          r: d => 4 + d.newJobs / 8000,
+          fill: "#378ADD",
+          fillOpacity: 0.7,
+          stroke: "#185FA5",
+          strokeWidth: 1,
+          tip: true,
+          channels: {
+            State: "name",
+            "Current jobs": d => d.jobs.toLocaleString(),
+            "Projected new": d => "+" + d.newJobs.toLocaleString(),
+            Facilities: "fac"
+          }
+        }),
+        Plot.text(dcJobs.filter(d => d.fac >= 4 || d.jobs > 15000), {
+          x: "fac",
+          y: "jobs",
+          text: "st",
+          dy: -10,
+          fontSize: 10,
+          fill: "#444"
+        })
       ]
-    }))
-  }</div>
-  <div class="card">${
-    resize((width) => Plot.plot({
-      title: "How big are penguins, anyway? 🐧",
+    }));
+  } else if (selectedView === "Top states — stacked") {
+    display(Plot.plot({
+      title: "Current + projected AI/DC jobs — top 20 states",
       width,
-      grid: true,
-      x: {label: "Body mass (g)"},
-      y: {label: "Flipper length (mm)"},
-      color: {legend: true},
+      height: 520,
+      marginLeft: 100,
+      x: { label: "Jobs →", grid: true,
+           tickFormat: d => d >= 1000 ? (d/1000) + "k" : d },
+      y: { label: null },
+      color: { legend: true, domain: ["Current jobs", "Projected new"],
+               range: ["#378ADD", "#1D9E75"] },
       marks: [
-        Plot.linearRegressionY(penguins, {x: "body_mass_g", y: "flipper_length_mm", stroke: "species"}),
-        Plot.dot(penguins, {x: "body_mass_g", y: "flipper_length_mm", stroke: "species", tip: true})
+        Plot.barX(top20.flatMap(d => [
+          { name: d.name, type: "Current jobs",  value: d.jobs    },
+          { name: d.name, type: "Projected new", value: d.newJobs }
+        ]), {
+          x: "value",
+          y: "name",
+          fill: "type",
+          sort: { y: "-x" },
+          tip: true
+        })
       ]
-    }))
-  }</div>
+    }));
+  } else {
+    const growthStates = dcJobs
+      .filter(d => d.newJobs > 0 && d.jobs > 0)
+      .map(d => ({ ...d, growthPct: Math.round(d.newJobs / d.jobs * 100) }))
+      .sort((a, b) => b.growthPct - a.growthPct)
+      .slice(0, 15);
+
+    display(Plot.plot({
+      title: "States with highest projected job growth % from data center buildout",
+      width,
+      height: 480,
+      marginLeft: 110,
+      x: { label: "Projected growth vs current base →", tickFormat: d => d + "%" },
+      y: { label: null },
+      marks: [
+        Plot.barX(growthStates, {
+          x: "growthPct",
+          y: "name",
+          fill: "#534AB7",
+          fillOpacity: 0.8,
+          sort: { y: "-x" },
+          tip: true,
+          channels: {
+            State: "name",
+            "Current jobs": d => d.jobs.toLocaleString(),
+            "Projected new": d => "+" + d.newJobs.toLocaleString(),
+            "Growth %": d => d.growthPct + "%"
+          }
+        }),
+        Plot.ruleX([0])
+      ]
+    }));
+  }
+}
+```
+</div>
+  
 </div>
 
 ---
 
-## Next steps
+## Our Goal
 
-Here are some ideas of things you could try…
+There has been a lot of discussion around AI stealing jobs or how AI will negatively impact employment. This project is to show how data centers and AI can have a positive impact on employment and the economy surrounding the environment.
 
 <div class="grid grid-cols-4">
   <div class="card">
