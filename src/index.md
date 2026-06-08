@@ -22,8 +22,7 @@ title: AI's Impact on Jobs
     <p>Something data centers increasing employment something productivity smthn smthn</p>
   </div>
 </div>
-<div class="card">
-</div>
+
 
 ---
 
@@ -54,6 +53,7 @@ There has been a lot of discussion around AI replacing people's jobs or how AI w
     Visit <a href="https://github.com/observablehq/framework">Framework on GitHub</a> and give us a star. Or file an issue if you’ve found a bug!
   </div>
 </div>
+
 
 <style>
 
