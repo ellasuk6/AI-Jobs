@@ -62,7 +62,7 @@ There has been a lot of discussion around AI replacing people's jobs or how AI w
   flex-direction: column;
   align-items: center;
   font-family: var(--sans-serif);
-  margin: 4rem 0 8rem;
+  margin: 2rem 0 6rem;
   text-wrap: balance;
   text-align: center;
 }
