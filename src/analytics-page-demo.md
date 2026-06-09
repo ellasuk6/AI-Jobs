@@ -6,7 +6,7 @@ toc: false
 
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,900&family=Inter:wght@400;450;500;600;700&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Exo+2:wght@400;500;600;700;800&family=Inter:wght@400;450;500;600;700&display=swap">
 
 ```js
 const dc = FileAttachment("./aijobs/dc_jobs_combined.csv").csv({typed: true});
@@ -119,7 +119,7 @@ const plotStyle = {fontFamily: "Inter, system-ui, sans-serif", fontSize: "13px",
   --jd-ink:#161512; --jd-ink-soft:#48443e; --jd-muted:#8d867c;
   --jd-paper:#faf7f1; --jd-card:#fffdf9; --jd-line:rgba(22,21,18,.10); --jd-line-strong:rgba(22,21,18,.22);
   --jd-accent:#1c6b46; --jd-accent-deep:#114a30; --jd-gold:#a8762a;
-  --jd-display:"Fraunces",Georgia,"Times New Roman",serif;
+  --jd-display:"Exo 2",system-ui,sans-serif;
   --jd-sans:"Inter",system-ui,-apple-system,sans-serif;
 }
 html, body { background: var(--jd-paper); }

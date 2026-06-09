@@ -6,7 +6,7 @@ toc: false
 
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,900&family=Inter:wght@400;450;500;600;700&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Exo+2:wght@400;500;600;700;800&family=Inter:wght@400;450;500;600;700&display=swap">
 
 ```js
 import * as topojson from "npm:topojson-client";
@@ -56,7 +56,7 @@ display(await (async () => {
     UT:"Utah", VA:"Virginia", VT:"Vermont", WA:"Washington", WI:"Wisconsin",
     WV:"West Virginia", WY:"Wyoming"
   };
-
+ 
   const data = raw.filter(d => pop[d.state_abbr]).map(d => {
     const popK = pop[d.state_abbr];
     const jobs = d.current_jobs, reports = d.community_reports ?? 0;
@@ -73,15 +73,15 @@ display(await (async () => {
       reportsPer100k: +(reports / popK * 100).toFixed(2)
     };
   });
-
+ 
   const us = await d3.json("https://cdn.jsdelivr.net/npm/us-atlas@3/states-10m.json");
   const states = topojson.feature(us, us.objects.states).features;
   const projection = d3.geoAlbersUsa().fitSize([width, height], topojson.feature(us, us.objects.states));
   const path = d3.geoPath(projection);
   const byName = new Map(data.map(d => [d.state, d]));
-
+ 
   const RAMP = ["#1a4a2e","#2d7a3a","#52b044","#a8d64a","#f5ec1a","#f5a623","#d94f2b"];
-
+ 
   // bubble palettes (Ella's color coding): purple = community reports; per-type for facilities
   // strokes darkened so bubbles read on a light background
   const COMMUNITY = { fill: "#8b4fc8", stroke: "rgba(255,255,255,0.5)" };
@@ -90,7 +90,7 @@ display(await (async () => {
     con:  { label: "Under construction", fill: "#1a6b8a", stroke: "rgba(255,255,255,0.5)" },
     prop: { label: "Proposed",           fill: "#d94f2b", stroke: "rgba(255,255,255,0.5)" }
   };
-
+ 
   let heatMode = "jobsPer100k";   // "jobsPer100k" | "jobs"
   let bubMode  = "reports";       // "reports" | "reportsPer100k" | "facilities"
   const facSet = new Set();       // subset of op/con/prop, used when bubMode==="facilities"
@@ -109,15 +109,15 @@ display(await (async () => {
     const ks = [...facSet];
     return ks.length === 1 ? FAC[ks[0]] : { fill: "#4a5568", stroke: "rgba(255,255,255,0.5)" };
   };
-
-  const LEGEND_H = 120, totalH = height + LEGEND_H;
-
+ 
+  const LEGEND_H = 160, totalH = height + LEGEND_H;
+ 
   const container = d3.create("div")
     .style("font-family", "ui-monospace, SFMono-Regular, Menlo, monospace")
     .style("color", "#2a3441").style("background", "#f5f7fa")
     .style("padding", "16px").style("border-radius", "14px").style("position", "relative")
     .style("border", "1px solid #e2e8f0");
-
+ 
   // header: fixed title + a caption that REORDERS when you flip the heatmap
   const head = container.append("div").style("margin-bottom", "12px");
   head.append("div").text("Where AI lands — and who pushes back")
@@ -126,13 +126,13 @@ display(await (async () => {
   const sub = head.append("div")
     .style("font-size", "12px").style("color", "#5a6776").style("margin-top", "3px")
     .style("min-height", "16px");
-
+ 
   const mkBtn = (parent, label) => parent.append("button").text(label)
     .style("font-family", "inherit").style("font-size", "11px").style("cursor", "pointer")
     .style("border", "1px solid #d4dae1").style("border-radius", "999px")
     .style("padding", "5px 13px").style("background", "#ffffff").style("color", "#5a6776")
     .style("transition", "background .18s, color .18s");
-
+ 
   // Row 1 — heatmap toggle
   const row1 = container.append("div").style("margin-bottom", "7px")
     .style("display", "flex").style("gap", "8px").style("align-items", "center");
@@ -140,13 +140,13 @@ display(await (async () => {
     .style("font-size", "10px").style("letter-spacing", ".2em").style("color", "#6b7787").style("min-width", "78px");
   const btnJobsPC = mkBtn(row1, "Jobs per 100k");
   const btnJobsTot = mkBtn(row1, "Total jobs");
-
+ 
   // dot helper — colored dot in front of a button label
   const dotBtn = (btn, hex) => {
     const t = btn.node().textContent;
     btn.node().innerHTML = `<span style="display:inline-block;width:7px;height:7px;border-radius:50%;background:${hex};margin-right:5px;vertical-align:middle"></span>${t}`;
   };
-
+ 
   // Row 2 — bubbles: community reports (the complete, trustworthy signal)
   const row2 = container.append("div").style("margin-bottom", "7px")
     .style("display", "flex").style("gap", "8px").style("align-items", "center").style("flex-wrap", "wrap");
@@ -155,7 +155,7 @@ display(await (async () => {
   const btnRepRaw = mkBtn(row2, "Community reports");
   const btnRepPC  = mkBtn(row2, "Reports per 100k");
   [btnRepRaw, btnRepPC].forEach(b => dotBtn(b, COMMUNITY.fill));
-
+ 
   // Row 3 — bubbles: facility breakdown (multi-select).
   const row3 = container.append("div").style("margin-bottom", "11px")
     .style("display", "flex").style("gap", "8px").style("align-items", "center").style("flex-wrap", "wrap");
@@ -168,32 +168,48 @@ display(await (async () => {
   dotBtn(btnOp,   FAC.op.fill);
   dotBtn(btnCon,  FAC.con.fill);
   dotBtn(btnProp, FAC.prop.fill);
-
+ 
   const svg = container.append("svg")
     .attr("viewBox", [0, 0, width, totalH])
     .style("width", "100%").style("height", "auto")
     .style("background", "#ffffff").style("border-radius", "10px");
-
+ 
   const tip = container.append("div")
     .style("position", "absolute").style("pointer-events", "none").style("opacity", 0)
     .style("transform", "translate(-50%,-115%)").style("background", "#ffffff")
     .style("border", "1px solid #d4dae1").style("border-radius", "10px").style("padding", "9px 12px")
     .style("font-size", "12px").style("color", "#1a2733").style("white-space", "nowrap")
     .style("box-shadow", "0 14px 36px rgba(15,23,42,.18)").style("z-index", "10");
+ 
+  // const hoverLabel = svg.append("text")
+  // .attr("text-anchor", "middle").attr("dominant-baseline", "middle")
+  // .attr("font-size", 11).attr("font-weight", 700)
+  // .attr("fill", "#1a2733").attr("stroke", "#ffffff")
+  // .attr("stroke-width", 3).attr("paint-order", "stroke")
+  // .style("pointer-events", "none").style("opacity", 0);
 
-  const show = (event, name) => {
-    const d = byName.get(name); if (!d) return;
-    const [mx, my] = d3.pointer(event, container.node());
-    tip.style("left", mx + "px").style("top", my + "px").style("opacity", 1)
-      .html(`<b style="font-size:13px">${name}</b><br>
-        Jobs: ${fmt(d.jobs)} &nbsp;·&nbsp; ${fmt1(d.jobsPer100k)} / 100k<br>
-        <span style="color:#7b3fb0">Reports: ${fmt(d.reports)} &nbsp;·&nbsp; ${fmt2(d.reportsPer100k)} / 100k</span><br>
-        <span style="color:${FAC.op.fill}">Existing ${d.op}</span> &nbsp;
-        <span style="color:${FAC.con.fill}">Building ${d.con}</span> &nbsp;
-        <span style="color:${FAC.prop.fill}">Proposed ${d.prop}</span>`);
-  };
-  const hide = () => tip.style("opacity", 0);
-
+const show = (event, name) => {
+  const d = byName.get(name); if (!d) return;
+  const [mx, my] = d3.pointer(event, container.node());
+  tip.style("left", mx + "px").style("top", my + "px").style("opacity", 1)
+    .html(`<b style="font-size:13px">${name}</b><br>
+      Jobs: ${fmt(d.jobs)} &nbsp;·&nbsp; ${fmt1(d.jobsPer100k)} / 100k<br>
+      <span style="color:#7b3fb0">Reports: ${fmt(d.reports)} &nbsp;·&nbsp; ${fmt2(d.reportsPer100k)} / 100k</span><br>
+      <span style="color:${FAC.op.fill}">Existing ${d.op}</span> &nbsp;
+      <span style="color:${FAC.con.fill}">Building ${d.con}</span> &nbsp;
+      <span style="color:${FAC.prop.fill}">Proposed ${d.prop}</span>`);
+  // find the centroid for this state and show the abbreviation label
+  const match = states.find(f => f.properties.name === name);
+  if (match) {
+    const [cx, cy] = path.centroid(match);
+    hoverLabel.attr("x", cx).attr("y", cy).text(d.abbr).style("opacity", 1);
+  }
+};
+const hide = () => {
+  tip.style("opacity", 0);
+  hoverLabel.style("opacity", 0);
+};
+ 
   const statePaths = svg.append("g").selectAll("path").data(states).join("path")
     .attr("d", path).attr("stroke", "#ffffff").attr("stroke-width", 0.6)
     .style("cursor", "pointer")
@@ -206,36 +222,43 @@ display(await (async () => {
       d3.select(this).attr("stroke", "#ffffff").attr("stroke-width", 0.6);
       hide();
     });
-
+ 
   const bubbleG = svg.append("g");
 
-  // ---- state labels (drawn above bubbles; leader lines for tiny NE states) --
-  const labelG = svg.append("g").attr("pointer-events", "none");
-  const OFF = {            // [dx, dy] nudge so crowded NE labels don't collide
-    "New Jersey":[24,2], "Delaware":[30,12], "Maryland":[40,24],
-    "Connecticut":[28,-4], "Rhode Island":[34,8], "Massachusetts":[42,-12],
-    "New Hampshire":[16,-20], "Vermont":[-6,-24]
-  };
-  const labelData = states
-    .map(f => ({ name: f.properties.name, c: path.centroid(f), d: byName.get(f.properties.name) }))
-    .filter(o => o.d && o.c[0]);
-  labelG.selectAll("line").data(labelData.filter(o => OFF[o.name])).join("line")
-    .attr("x1", o => o.c[0]).attr("y1", o => o.c[1])
-    .attr("x2", o => o.c[0] + OFF[o.name][0]).attr("y2", o => o.c[1] + OFF[o.name][1])
-    .attr("stroke", "#9aa5b1").attr("stroke-width", 0.6);
-  labelG.selectAll("text").data(labelData).join("text")
-    .attr("x", o => o.c[0] + (OFF[o.name] ? OFF[o.name][0] : 0))
-    .attr("y", o => o.c[1] + (OFF[o.name] ? OFF[o.name][1] : 0))
-    .attr("text-anchor", "middle").attr("dy", "0.32em")
-    .attr("font-size", 9).attr("font-weight", 600)
-    .attr("fill", "#1a2733").attr("stroke", "#ffffff").attr("stroke-width", 2.4)
-    .attr("paint-order", "stroke").attr("stroke-linejoin", "round")
-    .text(o => o.d.abbr);
-
+  const hoverLabel = svg.append("text")
+  .attr("text-anchor", "middle").attr("dominant-baseline", "middle")
+  .attr("font-size", 11).attr("font-weight", 700)
+  .attr("fill", "#1a2733").attr("stroke", "#ffffff")
+  .attr("stroke-width", 3).attr("paint-order", "stroke")
+  .style("pointer-events", "none").style("opacity", 0);
+ 
+  // // ---- state labels (drawn above bubbles; leader lines for tiny NE states) --
+  // const labelG = svg.append("g").attr("pointer-events", "none");
+  // const OFF = {            // [dx, dy] nudge so crowded NE labels don't collide
+  //   "New Jersey":[24,2], "Delaware":[30,12], "Maryland":[40,24],
+  //   "Connecticut":[28,-4], "Rhode Island":[34,8], "Massachusetts":[42,-12],
+  //   "New Hampshire":[16,-20], "Vermont":[-6,-24]
+  // };
+  // const labelData = states
+  //   .map(f => ({ name: f.properties.name, c: path.centroid(f), d: byName.get(f.properties.name) }))
+  //   .filter(o => o.d && o.c[0]);
+  // labelG.selectAll("line").data(labelData.filter(o => OFF[o.name])).join("line")
+  //   .attr("x1", o => o.c[0]).attr("y1", o => o.c[1])
+  //   .attr("x2", o => o.c[0] + OFF[o.name][0]).attr("y2", o => o.c[1] + OFF[o.name][1])
+  //   .attr("stroke", "#9aa5b1").attr("stroke-width", 0.6);
+  // labelG.selectAll("text").data(labelData).join("text")
+  //   .attr("x", o => o.c[0] + (OFF[o.name] ? OFF[o.name][0] : 0))
+  //   .attr("y", o => o.c[1] + (OFF[o.name] ? OFF[o.name][1] : 0))
+  //   .attr("text-anchor", "middle").attr("dy", "0.32em")
+  //   .attr("font-size", 9).attr("font-weight", 600)
+  //   .attr("fill", "#1a2733").attr("stroke", "#ffffff").attr("stroke-width", 1.2)
+  //   .attr("paint-order", "stroke").attr("stroke-linejoin", "round")
+  //   .text(o => o.d.abbr);
+ 
   const legY = height + 16;
   const bubbleLegG = svg.append("g").attr("transform", `translate(40,${legY})`);
   const rampG = svg.append("g").attr("transform", `translate(${width - 220},${legY})`);
-
+ 
   function updateButtons() {
     [[btnJobsPC, "jobsPer100k"], [btnJobsTot, "jobs"]].forEach(([b, m]) => {
       b.style("background", heatMode === m ? "#2d7a3a" : "#ffffff")
@@ -259,7 +282,7 @@ display(await (async () => {
       .style("color",  allOn ? "#475569" : "#5a6776")
       .style("border", allOn ? "1px solid #cbd5e1" : "1px solid #d4dae1");
   }
-
+ 
   function renderBubbles() {
     const maxVal = d3.max(data, bubVal) || 1;
     const r = d3.scaleSqrt().domain([0, maxVal]).range([0, 38]);
@@ -268,7 +291,7 @@ display(await (async () => {
     const cents = states
       .map(f => ({ name: f.properties.name, c: path.centroid(f), d: byName.get(f.properties.name) }))
       .filter(o => o.d && o.c[0]);
-
+ 
     bubbleG.selectAll("circle").data(cents).join("circle")
       .attr("cx", o => o.c[0]).attr("cy", o => o.c[1])
       .attr("fill", fill).attr("fill-opacity", 0.82)
@@ -276,7 +299,7 @@ display(await (async () => {
       .on("mousemove", (e, o) => show(e, o.name)).on("mouseleave", hide)
       .transition().duration(420)
       .attr("r", o => r(bubVal(o.d)));
-
+ 
     // bubble size legend
     bubbleLegG.selectAll("*").remove();
     let legendLabel;
@@ -287,7 +310,7 @@ display(await (async () => {
     bubbleLegG.append("text").attr("x", 0).attr("y", 0)
       .attr("fill", "#5a6776").attr("font-size", 10).attr("letter-spacing", ".1em")
       .text(legendLabel);
-
+ 
     const maxR = 38;
     let samples;
     if (decimal) {
@@ -312,7 +335,7 @@ display(await (async () => {
       bx += rad * 2 + 16;
     });
   }
-
+ 
   function renderHeatmap() {
     const vals = data.map(heatVal).filter(v => v != null);
     const lo = d3.min(vals), hi = d3.max(vals);
@@ -336,18 +359,18 @@ display(await (async () => {
     rampG.append("text").attr("x", 200).attr("y", 40).attr("text-anchor", "end")
       .attr("fill", "#5a6776").attr("font-size", 9)
       .text(heatMode === "jobsPer100k" ? fmt1(hi) : fmt(hi));
-
-    // live caption — the leaders REORDER when you flip Total ↔ Per-100k
-    const top = data.filter(d => heatVal(d) != null)
-      .sort((a, b) => heatVal(b) - heatVal(a)).slice(0, 5);
-    const lbl = heatMode === "jobsPer100k" ? "Jobs per 100k people" : "Total AI / data-center jobs";
-    const fm  = heatMode === "jobsPer100k" ? fmt1 : fmt;
-    sub.html(`Color = <b style="color:#2d7a3a">${lbl}</b> &nbsp;·&nbsp; leaders: ` +
-      top.map(d => `<b>${d.abbr}</b> ${fm(heatVal(d))}`).join(" &nbsp;›&nbsp; "));
+ 
+    // // live caption — the leaders REORDER when you flip Total ↔ Per-100k
+    // const top = data.filter(d => heatVal(d) != null)
+    //   .sort((a, b) => heatVal(b) - heatVal(a)).slice(0, 5);
+    // const lbl = heatMode === "jobsPer100k" ? "Jobs per 100k people" : "Total AI / data-center jobs";
+    // const fm  = heatMode === "jobsPer100k" ? fmt1 : fmt;
+    // sub.html(`Color = <b style="color:#2d7a3a">${lbl}</b> &nbsp;·&nbsp; leaders: ` +
+    //   top.map(d => `<b>${d.abbr}</b> ${fm(heatVal(d))}`).join(" &nbsp;›&nbsp; "));
   }
-
+ 
   function renderAll() { updateButtons(); renderHeatmap(); renderBubbles(); }
-
+ 
   btnJobsPC.on("click", () => { heatMode = "jobsPer100k"; renderAll(); });
   btnJobsTot.on("click", () => { heatMode = "jobs"; renderAll(); });
   btnRepRaw.on("click", () => { bubMode = "reports";        facSet.clear(); renderAll(); });
@@ -360,7 +383,7 @@ display(await (async () => {
       renderAll();
     });
   });
-
+ 
   renderAll();
   return container.node();
 })());
@@ -390,7 +413,7 @@ display(await (async () => {
   --jd-ink:#161512; --jd-ink-soft:#48443e; --jd-muted:#8d867c;
   --jd-paper:#faf7f1; --jd-card:#fffdf9; --jd-line:rgba(22,21,18,.10); --jd-line-strong:rgba(22,21,18,.22);
   --jd-accent:#1c6b46; --jd-accent-deep:#114a30; --jd-gold:#a8762a;
-  --jd-display:"Fraunces",Georgia,"Times New Roman",serif;
+  --jd-display:"Exo 2",system-ui,sans-serif;
   --jd-sans:"Inter",system-ui,-apple-system,sans-serif;
 }
 html, body { background: var(--jd-paper); }
