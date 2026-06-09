@@ -60,22 +60,122 @@ const plotStyle = {fontFamily: "Inter, system-ui, sans-serif", fontSize: "13px",
   <div class="jd-sec-head"><span class="idx">02</span><h2>Data showing growth</h2><span class="line"></span></div>
 </section>
 
+```js
+const selectedView = view(Inputs.radio(
+  ["Facilities vs jobs", "Top states — stacked", "Growth leaders"],
+  {value: "Facilities vs jobs", label: "Chart view"}
+));
+```
+
 <div class="jd-panel">
-  ${resize((width) => {
-    const top = [...dc]
-      .filter(d => d.projected_new_jobs > 0)
-      .sort((a, b) => b.projected_new_jobs - a.projected_new_jobs)
-      .slice(0, 15);
+
+```js
+display((() => {
+  const sorted = [...dcJobs].sort((a, b) =>
+    (b.jobs + b.newJobs) - (a.jobs + a.newJobs)
+  )
+  const top20 = sorted.slice(0, 20)
+
+  if (selectedView === "Facilities vs jobs") {
     return Plot.plot({
-      width, height: 460, marginLeft: 104, marginBottom: 42, style: plotStyle,
-      x: {label: "Projected new jobs by 2027 →", grid: true, tickFormat: d => d >= 1000 ? d/1000 + "k" : d},
-      y: {label: null},
+      title: "Data center facilities vs current AI jobs by state",
+      width,
+      height: 420,
+      marginLeft: 60,
+      x: { label: "Total data center facilities →", grid: true },
+      y: { label: "↑ Current AI/DC jobs (BLS 2025)", grid: true,
+           tickFormat: d => d >= 1000 ? (d/1000) + "k" : d,
+           domain: [0, 60000] },
       marks: [
-        Plot.barX(top, {x: "projected_new_jobs", y: "state", sort: {y: "-x"}, fill: "#1c6b46", fillOpacity: 0.9, rx: 2, tip: true, channels: {"New jobs": d => "+" + d.projected_new_jobs.toLocaleString()}}),
-        Plot.ruleX([0], {stroke: "#161512", strokeOpacity: 0.25})
+        Plot.dot(dcJobs.filter(d => d.fac > 0), {
+          x: "fac",
+          y: "jobs",
+          r: d => 12 + d.newJobs / 4000,
+          fill: "#378ADD",
+          fillOpacity: 0.75,
+          stroke: "#185FA5",
+          strokeWidth: 1.5,
+          tip: true,
+          channels: {
+            State: "name",
+            "Current jobs": d => d.jobs.toLocaleString(),
+            "Projected new": d => "+" + d.newJobs.toLocaleString(),
+            Facilities: "fac"
+          }
+        }),
+        Plot.text(dcJobs.filter(d => d.fac >= 4 || d.jobs > 15000), {
+          x: "fac",
+          y: "jobs",
+          text: "st",
+          dy: -10,
+          fontSize: 10,
+          fill: "#444"
+        })
       ]
-    });
-  })}
+    })
+  }
+
+  if (selectedView === "Top states — stacked") {
+    return Plot.plot({
+      title: "Current + projected AI/DC jobs — top 20 states",
+      width,
+      height: 520,
+      marginLeft: 100,
+      x: { label: "Jobs →", grid: true,
+           tickFormat: d => d >= 1000 ? (d/1000) + "k" : d },
+      y: { label: null },
+      color: { legend: true, domain: ["Current jobs", "Projected new"],
+               range: ["#378ADD", "#1D9E75"] },
+      marks: [
+        Plot.barX(top20.flatMap(d => [
+          { name: d.name, type: "Current jobs",    value: d.jobs    },
+          { name: d.name, type: "Projected new",   value: d.newJobs }
+        ]), {
+          x: "value",
+          y: "name",
+          fill: "type",
+          sort: { y: "-x" },
+          tip: true
+        })
+      ]
+    })
+  }
+
+  if (selectedView === "Growth leaders") {
+    const growthStates = dcJobs
+      .filter(d => d.newJobs > 0 && d.jobs > 0)
+      .map(d => ({ ...d, growthPct: Math.round(d.newJobs / d.jobs * 100) }))
+      .sort((a, b) => b.growthPct - a.growthPct)
+      .slice(0, 15)
+    return Plot.plot({
+      title: "States with highest projected job growth % from data center buildout",
+      width,
+      height: 480,
+      marginLeft: 110,
+      x: { label: "Projected growth vs current base →", tickFormat: d => d + "%" },
+      y: { label: null },
+      marks: [
+        Plot.barX(growthStates, {
+          x: "growthPct",
+          y: "name",
+          fill: "#534AB7",
+          fillOpacity: 0.8,
+          sort: { y: "-x" },
+          tip: true,
+          channels: {
+            State: "name",
+            "Current jobs": d => d.jobs.toLocaleString(),
+            "Projected new": d => "+" + d.newJobs.toLocaleString(),
+            "Growth %": d => d.growthPct + "%"
+          }
+        }),
+        Plot.ruleX([0])
+      ]
+    })
+  }
+})())
+```
+
 </div>
 
 <p class="jd-cap"><strong>What to do with this data:</strong> treat it as a scoreboard. These are the job numbers states have been promised from announced buildout — keep them, and hold each state to its figure as the concrete actually gets poured.</p>
