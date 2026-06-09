@@ -62,8 +62,8 @@ const plotStyle = {fontFamily: "Inter, system-ui, sans-serif", fontSize: "13px",
 
 ```js
 const selectedView = view(Inputs.radio(
-  ["Facilities vs jobs", "Top states — stacked", "Growth leaders"],
-  {value: "Facilities vs jobs", label: "Chart view"}
+  ["Top states — stacked", "Growth leaders"],
+  {value: "Top states — stacked", label: "Chart view"}
 ));
 ```
 
@@ -76,45 +76,7 @@ display((() => {
   )
   const top20 = sorted.slice(0, 20)
 
-  if (selectedView === "Facilities vs jobs") {
-    return Plot.plot({
-      title: "Data center facilities vs current AI jobs by state",
-      width,
-      height: 420,
-      marginLeft: 60,
-      x: { label: "Total data center facilities →", grid: true },
-      y: { label: "↑ Current AI/DC jobs (BLS 2025)", grid: true,
-           tickFormat: d => d >= 1000 ? (d/1000) + "k" : d,
-           domain: [0, 60000] },
-      marks: [
-        Plot.dot(dcJobs.filter(d => d.fac > 0), {
-          x: "fac",
-          y: "jobs",
-          r: d => 12 + d.newJobs / 4000,
-          fill: "#378ADD",
-          fillOpacity: 0.75,
-          stroke: "#185FA5",
-          strokeWidth: 1.5,
-          tip: true,
-          channels: {
-            State: "name",
-            "Current jobs": d => d.jobs.toLocaleString(),
-            "Projected new": d => "+" + d.newJobs.toLocaleString(),
-            Facilities: "fac"
-          }
-        }),
-        Plot.text(dcJobs.filter(d => d.fac >= 4 || d.jobs > 15000), {
-          x: "fac",
-          y: "jobs",
-          text: "st",
-          dy: -10,
-          fontSize: 10,
-          fill: "#444"
-        })
-      ]
-    })
-  }
-
+  
   if (selectedView === "Top states — stacked") {
     return Plot.plot({
       title: "Current + projected AI/DC jobs — top 20 states",
