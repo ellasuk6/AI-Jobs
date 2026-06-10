@@ -18,7 +18,7 @@ const plotStyle = {fontFamily: "Inter, system-ui, sans-serif", fontSize: "13px",
 
 <header class="jd-masthead">
   <span class="kicker">The Evidence</span>
-  <h1>Analytics</h1>
+  <h1>Follow The Data</h1>
   <p class="sub">Proof that data centers correlate with jobs — and a clear read on where the next wave of growth is headed.</p>
   <div class="flourish"></div>
 </header>
