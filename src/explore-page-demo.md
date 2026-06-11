@@ -1,5 +1,5 @@
 ---
-title: Explore Page Demo
+title: See It Yourself
 theme: air
 toc: false
 ---
