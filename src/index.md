@@ -1,5 +1,5 @@
 ---
-title: AI Jobs Page Demo
+title: The Overview
 theme: air
 toc: false
 ---
@@ -10,11 +10,14 @@ toc: false
 
 ```js
 const dc = FileAttachment("./aijobs/dc_jobs_combined.csv").csv({typed: true});
+
+// import * as d3 from "npm:d3";
+// const dc = FileAttachment("./aijobs/dc_jobs_combined.csv").csv({typed: true});
 ```
 
 <header class="jd-masthead">
   <span class="kicker">AI&rsquo;s Impact on Jobs</span>
-  <h1>AI&nbsp;Jobs</h1>
+  <h1>The Overview</h1>
   <p class="sub">How the data-center building boom is quietly redrawing the American job map — one state at a time, in the numbers.</p>
   <div class="flourish"></div>
 </header>
@@ -31,18 +34,42 @@ const dc = FileAttachment("./aijobs/dc_jobs_combined.csv").csv({typed: true});
   <div class="jd-sec-head"><span class="idx">02</span><h2>Proof of Concept</h2><span class="line"></span></div>
 </section>
 
+
 <div class="jd-panel">
   ${resize((width) => Plot.plot({
     width,
-    height: 380,
-    marginLeft: 58,
-    marginBottom: 46,
+    height: 420,
+    marginLeft: 64,
+    marginBottom: 50,
+    marginRight: 20,
     style: {fontFamily: "Inter, system-ui, sans-serif", fontSize: "13px", background: "transparent", color: "#48443e"},
     x: {label: "Total documented facilities →", grid: true},
     y: {label: "↑ AI / data-center jobs", grid: true, tickFormat: d => d >= 1000 ? d/1000 + "k" : d},
     marks: [
       Plot.linearRegressionY(dc, {x: "total_facilities", y: "current_jobs", stroke: "#1c6b46", fillOpacity: 0.12}),
-      Plot.dot(dc, {x: "total_facilities", y: "current_jobs", r: 3.5, fill: "#114a30", fillOpacity: 0.55, stroke: "#faf7f1", strokeWidth: 0.6, tip: true, channels: {State: "state", Jobs: d => d.current_jobs.toLocaleString(), Facilities: "total_facilities"}})
+      Plot.dot(dc, {
+        x: "total_facilities",
+        y: "current_jobs",
+        r: 7,
+        fill: "#114a30",
+        fillOpacity: 0.65,
+        stroke: "#faf7f1",
+        strokeWidth: 1.2,
+        tip: true,
+        title: d => `${d.state}\nJobs: ${d.current_jobs.toLocaleString()}\nFacilities: ${d.total_facilities}`
+      }),
+      Plot.text(dc.filter(d => d.total_facilities >= 4 || d.current_jobs > 15000), {
+        x: "total_facilities",
+        y: "current_jobs",
+        text: "state_abbr",
+        dy: -12,
+        fontSize: 10,
+        fontWeight: 600,
+        fill: "#114a30",
+        stroke: "#faf7f1",
+        strokeWidth: 3,
+        paintOrder: "stroke"
+      })
     ]
   }))}
 </div>
