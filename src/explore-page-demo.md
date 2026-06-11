@@ -148,13 +148,11 @@ display(await (async () => {
   row2.append("span").text("BUBBLES")
     .style("font-size", "10px").style("letter-spacing", ".2em").style("color", "#6b7787").style("min-width", "78px");
   const btnRepRaw = mkBtn(row2, "Community reports");
-  const btnRepPC  = mkBtn(row2, "Reports per 100k");
   const btnFacAll = mkBtn(row2, "All facilities");
   const btnOp     = mkBtn(row2, "Existing");
   const btnCon    = mkBtn(row2, "Under construction");
   const btnProp   = mkBtn(row2, "Proposed");
   dotBtn(btnRepRaw, COMMUNITY.fill);
-  dotBtn(btnRepPC,  COMMUNITY.fill);
   dotBtn(btnFacAll, "#d4a017");
   dotBtn(btnOp,     FAC.op.fill);
   dotBtn(btnCon,    FAC.con.fill);
@@ -227,11 +225,7 @@ display(await (async () => {
        .style("color",      heatMode === m ? "#ffffff" : "#5a6776")
        .style("border",     heatMode === m ? "1px solid #2d7a3a" : "1px solid #d4dae1");
     });
-    [[btnRepRaw, "reports"], [btnRepPC, "reportsPer100k"]].forEach(([b, m]) => {
-      b.style("background", bubMode === m ? "#8b4fc822" : "#ffffff")
-       .style("color",      bubMode === m ? "#7b3fb0"   : "#5a6776")
-       .style("border",     bubMode === m ? "1px solid #8b4fc855" : "1px solid #d4dae1");
-    });
+
     [[btnOp, "op"], [btnCon, "con"], [btnProp, "prop"]].forEach(([b, k]) => {
       const on = bubMode === "facilities" && facSet.has(k);
       b.style("background", on ? FAC[k].fill + "22" : "#ffffff")
@@ -326,7 +320,6 @@ display(await (async () => {
   btnJobsPC.on("click",  () => { heatMode = "jobsPer100k"; renderAll(); });
   btnJobsTot.on("click", () => { heatMode = "jobs";        renderAll(); });
   btnRepRaw.on("click",  () => { bubMode = "reports";        facSet.clear(); renderAll(); });
-  btnRepPC.on("click",   () => { bubMode = "reportsPer100k"; facSet.clear(); renderAll(); });
   btnFacAll.on("click",  () => { bubMode = "facilities"; facSet.clear(); ["op","con","prop"].forEach(k => facSet.add(k)); renderAll(); });
   [[btnOp, "op"], [btnCon, "con"], [btnProp, "prop"]].forEach(([b, k]) => {
     b.on("click", () => {
