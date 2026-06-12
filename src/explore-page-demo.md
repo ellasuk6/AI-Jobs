@@ -343,8 +343,8 @@ display(await (async () => {
   ${Inputs.table(
     [...dc].sort((a, b) => b.current_jobs - a.current_jobs).slice(0, 5),
     {
-      columns: ["state", "current_jobs", "projected_new_jobs", "total_facilities"],
-      header: {state: "State", current_jobs: "Current jobs", projected_new_jobs: "Projected new", total_facilities: "Facilities"},
+      columns: ["state", "current_jobs", "projected_new_jobs", "total_with_reports"],
+      header: {state: "State", current_jobs: "Current jobs", projected_new_jobs: "Projected new", total_with_reports: "Facilities"},
       rows: 5, select: false
     }
   )}

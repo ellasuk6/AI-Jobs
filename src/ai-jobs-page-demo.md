@@ -112,9 +112,8 @@ const dc = FileAttachment("./aijobs/dc_jobs_combined.csv").csv({typed: true});
   <div class="col">
     <h4>Project</h4>
     <a href="./aijobs/ai-proj-personal">Team</a>
-    <a href="https://github.com/observablehq/framework">GitHub</a>
-    <a href="https://www.visualcapitalist.com/ranked-states-by-ai-data-center-jobs/">Data</a>
-    <a href="https://observablehq.com/framework/">Observable</a>
+    <a href="https://github.com/avalentino717/AI-Jobs">GitHub</a>
+    <a href="https://observablehq.com/@dis-2026-summer/ai-project">Observable</a>
   </div>
 </footer>
 
