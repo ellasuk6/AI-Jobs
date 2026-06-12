@@ -350,6 +350,21 @@ display(await (async () => {
   )}
 </div>
 
+<footer class="jd-footer">
+  <div class="brand">AI&nbsp;Jobs<small>A demo build</small></div>
+  <div class="col">
+    <h4>Pages</h4>
+    <a href="./">Home</a>
+    <a href="./analytics-page-demo">Analytics</a>
+    <a href="./explore-page-demo">Explore</a>
+  </div>
+  <div class="col">
+    <h4>Project</h4>
+    <a href="https://github.com/avalentino717/AI-Jobs">GitHub</a>
+    <a href="https://observablehq.com/@dis-2026-summer/ai-project">Observable</a>
+  </div>
+</footer>
+
 <style>
 :root {
   --jd-ink:#161512; --jd-ink-soft:#48443e; --jd-muted:#8d867c;
@@ -384,4 +399,13 @@ body { font-family: var(--jd-sans); color: var(--jd-ink); -webkit-font-smoothing
 .jd-cap { font:400 .96rem/1.65 var(--jd-sans); color:var(--jd-muted); max-width:54em; margin:1.1rem 2px 0; }
 .jd-cap strong { color:var(--jd-ink-soft); font-weight:600; }
 .jd-cap em { font-style:normal; color:var(--jd-accent); font-weight:600; }
+
+
+.jd-footer { margin:4.5rem 0 2rem; border-top:2px solid var(--jd-ink); padding-top:1.4rem;
+  display:flex; gap:4.5rem; flex-wrap:wrap; align-items:flex-start; }
+.jd-footer .brand { font-family:var(--jd-display); font-weight:600; font-size:1.25rem; margin-right:auto; line-height:1.1; }
+.jd-footer .brand small { display:block; font:400 .8rem var(--jd-sans); color:var(--jd-muted); margin-top:.3rem; }
+.jd-footer .col h4 { font:600 11px var(--jd-sans); letter-spacing:.16em; text-transform:uppercase; color:var(--jd-muted); margin:0 0 .7rem; }
+.jd-footer .col a { display:block; padding:3px 0; color:var(--jd-ink-soft); text-decoration:none; font:450 .95rem var(--jd-sans); transition:color .15s; }
+.jd-footer .col a:hover { color:var(--jd-accent); }
 </style>
