@@ -80,7 +80,7 @@ const dc = FileAttachment("./aijobs/dc_jobs_combined.csv").csv({typed: true});
   <div class="jd-sec-head"><span class="idx">03</span><h2>What You Can Do Here</h2><span class="line"></span></div>
 </section>
 
-<div class="jd-grid3">
+<div class="jd-grid2">
   <a class="jd-tile" href="./analytics-page-demo">
     <span class="num">Read</span>
     <span class="t">Analytics</span>
@@ -93,12 +93,7 @@ const dc = FileAttachment("./aijobs/dc_jobs_combined.csv").csv({typed: true});
     <span class="d">A live U.S. map — heatmap the states by jobs, then drop bubbles for community reports and facilities.</span>
     <span class="go">Open Explore →</span>
   </a>
-  <a class="jd-tile" href="./analytics-page-demo#the-raw-numbers">
-    <span class="num">Verify</span>
-    <span class="t">Dig In</span>
-    <span class="d">Every figure traces to a public source. Sort and filter the raw, per-state table for yourself.</span>
-    <span class="go">See the data →</span>
-  </a>
+  
 </div>
 
 <footer class="jd-footer">
@@ -150,7 +145,7 @@ body { font-family: var(--jd-sans); color: var(--jd-ink); -webkit-font-smoothing
 .jd-prose.lead::first-letter { font-family:var(--jd-display); font-weight:900; float:left; font-size:3.5em; line-height:.7; margin:.05em .14em 0 0; color:var(--jd-accent); }
 .jd-prose strong { color:var(--jd-ink); font-weight:600; }
 
-.jd-grid3 { display:grid; grid-template-columns:repeat(3,1fr); gap:1rem; }
+.jd-grid2 { display:grid; grid-template-columns:repeat(2,1fr); gap:1rem; }
 @media (max-width:760px){ .jd-grid3{grid-template-columns:1fr;} }
 .jd-tile { display:flex; flex-direction:column; gap:.5rem; min-height:188px; background:var(--jd-card); border:1px solid var(--jd-line);
   border-radius:14px; padding:1.35rem 1.4rem; text-decoration:none; color:inherit; transition:transform .18s ease, box-shadow .18s ease, border-color .18s; }
