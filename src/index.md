@@ -18,7 +18,7 @@ const dc = FileAttachment("./aijobs/dc_jobs_combined.csv").csv({typed: true});
 <header class="jd-masthead">
   <span class="kicker">AI&rsquo;s Impact on Jobs</span>
   <h1>The Overview</h1>
-  <p class="sub">How the data-center building boom is quietly redrawing the American job map — one state at a time, in the numbers.</p>
+  <p class="sub">How Artificial Intelligence is not our enemy in the job market</p>
   <div class="flourish"></div>
 </header>
 
@@ -27,7 +27,7 @@ const dc = FileAttachment("./aijobs/dc_jobs_combined.csv").csv({typed: true});
 </section>
 
 <div class="jd-panel">
-  <p class="jd-prose lead">Tens of billions of dollars are pouring into AI data centers across the United States, and every groundbreaking comes wrapped in the same promise: <strong>jobs</strong>. This site exists to check that promise against the record. We gather facility counts, community filings, and Bureau of Labor Statistics employment figures for all fifty states and put them side by side, so the question answers itself — <strong>where the infrastructure lands, do the jobs really follow?</strong> No press releases, no spin. Just the data, laid out plainly enough to argue with.</p>
+  <p class="jd-prose lead">While it’s easy to worry about automation replacing human workers, the data shows a different story: technology isn't just closing doors, it's opening new ones. This platform highlights how the rise of AI and data centers is actively fueling economic growth, creating entirely new career paths, and transforming existing roles into more creative, high-value opportunities. Explore the insights below to see how tomorrow's infrastructure is building today's jobs.</p>
 </div>
 
 <section class="jd-sec">

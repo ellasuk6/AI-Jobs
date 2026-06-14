@@ -54,7 +54,7 @@ const plotStyle = {fontFamily: "Inter, system-ui, sans-serif", fontSize: "13px",
   </div>
 </div>
 
-<p class="jd-cap"><strong>Why this matters:</strong> two different measures of data-center presence — physical facilities and community-filed reports — both bend upward against jobs. When two independent signals point the same way, the correlation is hard to wave off as coincidence.</p>
+<p class="jd-cap"><strong>Understanding the Charts:</strong> The solid upward-sloping line shows a positive trend, proving that as data center infrastructure increases, the number of AI jobs grows right along with it. The shaded band around the line represents the margin of error; a narrower band means a more predictable connection between the two data points. Because both independent charts bend upward together, it confirms that this job growth is a real trend rather than a mere coincidence.</p>
 
 <section class="jd-sec">
   <div class="jd-sec-head"><span class="idx">02</span><h2>Data showing growth</h2><span class="line"></span></div>
