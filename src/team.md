@@ -16,16 +16,17 @@ toc: false
 
 <div class="jd-grid3">
   <a class="jd-tile">
+    <img src="./arianna.jpeg" alt="Arianna Valentino" style="width:100%; height:260px; object-fit:cover; object-position:center 20%; border-radius:10px; margin-bottom:.75rem;" />
     <span class="t">Arianna Valentino</span>
-    <span class="d"><strong>Jobs:</strong> Github control, Framework set-up, Website editor, Graphics and visualizations, Data finder
-</span>
+    <span class="d"><strong>Jobs:</strong> Github control, Framework set-up, Website editor, Graphics and visualizations, Data finder</span>
   </a>
   <a class="jd-tile">
+    <img src="./ella.jpeg" alt="Ella Suk" style="width:100%; height:260px; object-fit:cover; object-position:center 20%; border-radius:10px; margin-bottom:.75rem;" />
     <span class="t">Ella Suk</span>
-    <span class="d"><strong>Jobs:</strong> Data transformation, Website usability editor, Graphics and visualization revisions, Domain host and creator
-</span>
+    <span class="d"><strong>Jobs:</strong> Data transformation, Website usability editor, Graphics and visualization revisions, Domain host and creator</span>
   </a>
   <a class="jd-tile">
+    <img src="./jett.jpeg" alt="Jett" style="width:100%; height:260px; object-fit:cover; object-position:center 20%; border-radius:10px; margin-bottom:.75rem;" />
     <span class="t">Jett</span>
     <span class="d"><strong>Jobs:</strong> Framework Web Page Design + Creation, Website editor, Graphics and Visualizations</span>
   </a>
