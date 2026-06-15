@@ -1,5 +1,5 @@
 ---
-title: The Overview
+title: Overview
 theme: air
 toc: false
 ---
@@ -9,165 +9,590 @@ toc: false
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Exo+2:wght@400;500;600;700;800&family=Inter:wght@400;450;500;600;700&display=swap">
 
 ```js
-const dc = FileAttachment("./aijobs/dc_jobs_combined.csv").csv({typed: true});
-
-// import * as d3 from "npm:d3";
-// const dc = FileAttachment("./aijobs/dc_jobs_combined.csv").csv({typed: true});
+import * as topojson from "npm:topojson-client";
 ```
 
-<header class="jd-masthead">
-  <span class="kicker">AI&rsquo;s Impact on Jobs</span>
-  <h1>The Overview</h1>
-  <p class="sub">How Artificial Intelligence is not our enemy in the job market</p>
+<section class="jd-hero">
+  <span class="kicker">A scrollytelling read</span>
+  <h1>AI&rsquo;s Impact on Jobs</h1>
+  <p>Billions are going into AI data centers, and every new one is sold on the jobs it will bring. Does the data back that up? Scroll down.</p>
   <div class="flourish"></div>
-</header>
-
-<section class="jd-sec">
-  <div class="jd-sec-head"><span class="idx">01</span><h2>Goal of Site</h2><span class="line"></span></div>
-</section>
-
-<div class="jd-panel">
-  <p class="jd-prose lead">While it’s easy to worry about automation replacing human workers, the data shows a different story: technology isn't just closing doors, it's opening new ones. This platform highlights how the rise of AI and data centers is actively fueling economic growth, creating entirely new career paths, and transforming existing roles into more creative, high-value opportunities. Explore the insights below to see how tomorrow's infrastructure is building today's jobs.</p>
-</div>
-
-<section class="jd-sec">
-  <div class="jd-sec-head"><span class="idx">02</span><h2>Proof of Concept</h2><span class="line"></span></div>
+  <span class="down">Scroll to begin ↓</span>
 </section>
 
 ```js
-const maxY = view(Inputs.range([10000, 90000], {value: 90000, label: "Max jobs (y-axis)", step: 1000}));
+display(await (async () => {
+  // ================================================================ DATA
+  const dc = await FileAttachment("./aijobs/dc_jobs_combined.csv").csv({typed: true});
+  const us = await d3.json("https://cdn.jsdelivr.net/npm/us-atlas@3/states-10m.json");
+
+  // The CSV `state` column is unreliable (16 rows hold the abbreviation) — key on state_abbr.
+  const NAME = {
+    AK:"Alaska", AL:"Alabama", AR:"Arkansas", AZ:"Arizona", CA:"California",
+    CO:"Colorado", CT:"Connecticut", DE:"Delaware", FL:"Florida", GA:"Georgia",
+    HI:"Hawaii", IA:"Iowa", ID:"Idaho", IL:"Illinois", IN:"Indiana", KS:"Kansas",
+    KY:"Kentucky", LA:"Louisiana", MA:"Massachusetts", MD:"Maryland", ME:"Maine",
+    MI:"Michigan", MN:"Minnesota", MO:"Missouri", MS:"Mississippi", MT:"Montana",
+    NC:"North Carolina", ND:"North Dakota", NE:"Nebraska", NH:"New Hampshire",
+    NJ:"New Jersey", NM:"New Mexico", NV:"Nevada", NY:"New York", OH:"Ohio",
+    OK:"Oklahoma", OR:"Oregon", PA:"Pennsylvania", RI:"Rhode Island",
+    SC:"South Carolina", SD:"South Dakota", TN:"Tennessee", TX:"Texas",
+    UT:"Utah", VA:"Virginia", VT:"Vermont", WA:"Washington", WI:"Wisconsin",
+    WV:"West Virginia", WY:"Wyoming"
+  };
+  // population (thousands) for per-100k modes
+  const POP = {AK:733,AL:5040,AR:3012,AZ:7280,CA:39029,CO:5840,CT:3616,DE:1018,FL:22610,GA:10912,
+    HI:1440,IA:3200,ID:1940,IL:12582,IN:6790,KS:2938,KY:4526,LA:4624,MA:6982,MD:6165,ME:1385,
+    MI:10034,MN:5717,MO:6178,MS:2961,MT:1123,NC:10699,ND:779,NE:1961,NH:1395,NJ:9261,NM:2114,
+    NV:3178,NY:19336,OH:11756,OK:3960,OR:4240,PA:13002,RI:1094,SC:5283,SD:909,TN:7051,TX:30030,
+    UT:3380,VA:8683,VT:647,WA:7740,WI:5896,WV:1775,WY:581};
+  const nm = d => NAME[d.state_abbr] ?? d.state;
+
+  const statesFC = topojson.feature(us, us.objects.states);
+  const features = statesFC.features;
+  const byFeat = new Map(dc.map(d => [nm(d), d]));
+
+  const maxJobs = d3.max(dc, d => d.current_jobs);
+  const maxFac  = d3.max(dc, d => d.total_facilities);
+  const maxRep  = d3.max(dc, d => d.total_with_reports);
+
+  function corr(field) {
+    const xs = dc.map(d => d[field]), ys = dc.map(d => d.current_jobs), n = xs.length;
+    let sx=0, sy=0, sxy=0, sxx=0, syy=0;
+    for (let i=0;i<n;i++){ sx+=xs[i]; sy+=ys[i]; sxy+=xs[i]*ys[i]; sxx+=xs[i]*xs[i]; syy+=ys[i]*ys[i]; }
+    return (n*sxy - sx*sy) / Math.sqrt((n*sxx - sx*sx) * (n*syy - sy*sy));
+  }
+  const rFacAll = corr("total_facilities"), rRepAll = corr("total_with_reports");
+
+  // ============================================================== CANVAS
+  const W = 960, H = 640;
+  const ix0 = 80, ix1 = 900, iy0 = 548, iy1 = 92;
+  const Lx0 = 80, Lx1 = 448, Rx0 = 512, Rx1 = 900;
+
+  const y        = d3.scaleLinear().domain([0, maxJobs]).nice().range([iy0, iy1]);
+  const xFacFull = d3.scaleLinear().domain([0, maxFac]).nice().range([ix0, ix1]);
+  const xFacL    = d3.scaleLinear().domain([0, maxFac]).nice().range([Lx0, Lx1]);
+  const xRepR    = d3.scaleLinear().domain([0, maxRep]).nice().range([Rx0, Rx1]);
+
+  const GREEN="#1c6b46", BLUE="#2456c9", RED="#c0392b", GOLD="#b07a1e", PURPLE="#8b4fc8", INK="#48443e";
+  const FACCOL = {op:"#3d52a0", con:"#1a6b8a", prop:"#d94f2b", all:BLUE};
+  const FACLAB = {op:"Existing", con:"Under construction", prop:"Proposed"};
+  const kfmt = d => d >= 1000 ? (d/1000)+"k" : d;
+  const cfmt = d3.format(","), f1 = d3.format(".1f"), f2 = d3.format(".2f");
+  const EASE = d3.easeCubicInOut;
+  const RM = matchMedia("(prefers-reduced-motion: reduce)").matches;
+  const D = ms => RM ? 0 : ms;
+
+  function linreg(field) {
+    const pts = dc.map(d => ({x:d[field], y:d.current_jobs}));
+    const n=pts.length; let sx=0,sy=0,sxy=0,sxx=0;
+    for (const p of pts){ sx+=p.x; sy+=p.y; sxy+=p.x*p.y; sxx+=p.x*p.x; }
+    const slope=(n*sxy-sx*sy)/(n*sxx-sx*sx);
+    return {slope, intercept:(sy-slope*sx)/n, ex:d3.extent(pts,p=>p.x)};
+  }
+  // 95% confidence band for the regression (matches Plot.linearRegressionY), as an area path
+  function regBandPath(field, xscale) {
+    const xs=dc.map(d=>d[field]), ys=dc.map(d=>d.current_jobs), n=xs.length;
+    const xbar=d3.mean(xs), ybar=d3.mean(ys);
+    let Sxx=0, Sxy=0; for(let i=0;i<n;i++){ Sxx+=(xs[i]-xbar)**2; Sxy+=(xs[i]-xbar)*(ys[i]-ybar); }
+    const slope=Sxy/Sxx, intercept=ybar-slope*xbar;
+    let SSE=0; for(let i=0;i<n;i++){ const e=ys[i]-(slope*xs[i]+intercept); SSE+=e*e; }
+    const s=Math.sqrt(SSE/(n-2)), tval=2.01, ex=d3.extent(xs);
+    const pts=d3.range(0,41).map(i=>{ const x=ex[0]+(ex[1]-ex[0])*i/40, yhat=slope*x+intercept,
+      se=s*Math.sqrt(1/n+(x-xbar)**2/Sxx), m=tval*se; return {x, lo:Math.max(0,yhat-m), hi:yhat+m}; });
+    return d3.area().x(p=>xscale(p.x)).y0(p=>y(p.lo)).y1(p=>y(p.hi))(pts);
+  }
+
+  // ============================================================== DOM SHELL
+  const svg = d3.create("svg")
+    .attr("viewBox", [0,0,W,H]).attr("preserveAspectRatio","xMidYMid meet")
+    .style("width","100%").style("height","100%").style("font-family","Inter, system-ui, sans-serif");
+
+  const root = d3.create("div").attr("class","scrolly");
+  const progress = root.append("div").attr("class","scroll-progress");
+  const graphic = root.append("div").attr("class","scrolly-graphic");
+  const sticky = graphic.append("div").attr("class","gsticky");
+  const gcard = sticky.append("div").attr("class","gcard");
+  const gcontrols = gcard.append("div").attr("class","gcontrols");
+  gcard.node().appendChild(svg.node());
+  const tip = gcard.append("div").attr("class","gtip");
+  sticky.append("div").attr("class","scroll-hint").html("scroll&nbsp;↓");
+
+  const defs = svg.append("defs");
+  defs.append("filter").attr("id","soft").attr("x","-40%").attr("y","-40%").attr("width","180%").attr("height","180%")
+    .append("feDropShadow").attr("dx",0).attr("dy",3).attr("stdDeviation",4).attr("flood-color","#161512").attr("flood-opacity",0.18);
+
+  function showTip(event, d) {
+    if (!d) return;
+    const [mx,my] = d3.pointer(event, gcard.node());
+    tip.style("left",mx+"px").style("top",(my-14)+"px").style("opacity",1)
+      .html(`<b>${nm(d)}</b><br><span style="color:${GREEN}">Jobs ${cfmt(d.current_jobs)}</span>
+        &nbsp;·&nbsp; <span style="color:${BLUE}">Facilities ${d.total_facilities}</span>
+        &nbsp;·&nbsp; <span style="color:${PURPLE}">Reports ${cfmt(d.community_reports)}</span>`);
+  }
+  const hideTip = () => tip.style("opacity",0);
+
+  // ============================================================== SCATTER ARC
+  // shared y gridlines + labels
+  const yTicks = y.ticks(5).filter(t => t>0);
+  const gGrid = svg.append("g");
+  gGrid.selectAll("line").data(yTicks).join("line")
+    .attr("x1",ix0).attr("x2",ix1).attr("y1",y).attr("y2",y).attr("stroke","#161512").attr("stroke-opacity",0.07);
+  gGrid.selectAll("text").data(yTicks).join("text")
+    .attr("x",ix0-12).attr("y",y).attr("dy","0.32em").attr("text-anchor","end").attr("font-size",11).attr("fill","#8d867c").text(kfmt);
+  gGrid.append("text").attr("transform",`translate(${ix0-50},${(iy0+iy1)/2}) rotate(-90)`)
+    .attr("text-anchor","middle").attr("font-size",12).attr("font-weight",600).attr("fill",INK).text("AI / data-center jobs →");
+
+  const titleG = svg.append("g");
+  const tNum = titleG.append("text").attr("x",ix0-2).attr("y",34).attr("font-size",12).attr("font-weight",700).attr("letter-spacing",".18em").attr("fill",GREEN);
+  const tTxt = titleG.append("text").attr("x",ix0+30).attr("y",34).attr("font-size",20).attr("font-weight",600).attr("fill","#161512").style("font-family","Exo 2, system-ui, sans-serif");
+  function setTitle(num, txt, color) {
+    titleG.interrupt().transition().duration(D(220)).style("opacity",0)
+      .on("end",()=>{ tNum.text(num).attr("fill",color); tTxt.text(txt); })
+      .transition().duration(D(420)).style("opacity",1);
+  }
+
+  // single-plot axis (proof + correlate)
+  const gAxis = svg.append("g");
+  gAxis.append("line").attr("x1",ix0).attr("x2",ix1).attr("y1",iy0).attr("y2",iy0).attr("stroke","#161512").attr("stroke-opacity",0.25);
+  xFacFull.ticks(6).forEach(t => gAxis.append("text").attr("x",xFacFull(t)).attr("y",iy0+18).attr("text-anchor","middle").attr("font-size",10).attr("fill","#8d867c").text(t));
+  gAxis.append("text").attr("x",(ix0+ix1)/2).attr("y",iy0+44).attr("text-anchor","middle").attr("font-size",12).attr("font-weight",600).attr("fill",INK).text("Data centers per state →");
+  const singleR = gAxis.append("text").attr("x",ix1-8).attr("y",iy1+8).attr("text-anchor","end").attr("font-size",13).attr("font-weight",600).attr("fill",BLUE).style("opacity",0);
+
+  // split-plot axes + panel titles + regressions
+  const gSplit = svg.append("g").style("opacity",0);
+  function panel(x0,x1,xscale,color,label) {
+    const cx=(x0+x1)/2, g=gSplit.append("g");
+    g.append("circle").attr("cx",cx-92).attr("cy",70).attr("r",5).attr("fill",color);
+    g.append("text").attr("x",cx-80).attr("y",70).attr("dy","0.32em").attr("font-size",14).attr("font-weight",600).attr("fill","#161512").style("font-family","Exo 2, system-ui, sans-serif").text(label);
+    g.append("line").attr("x1",x0).attr("x2",x1).attr("y1",iy0).attr("y2",iy0).attr("stroke","#161512").attr("stroke-opacity",0.25);
+    xscale.ticks(4).forEach(t => g.append("text").attr("x",xscale(t)).attr("y",iy0+17).attr("text-anchor","middle").attr("font-size",9).attr("fill","#8d867c").text(t));
+  }
+  gSplit.append("line").attr("x1",(Lx1+Rx0)/2).attr("x2",(Lx1+Rx0)/2).attr("y1",iy1-4).attr("y2",iy0).attr("stroke","#161512").attr("stroke-opacity",0.08);
+  panel(Lx0,Lx1,xFacL,BLUE,"Data centers");
+  panel(Rx0,Rx1,xRepR,RED,"+ Reports");
+  gSplit.append("text").attr("x",(Lx0+Lx1)/2).attr("y",iy0+38).attr("text-anchor","middle").attr("font-size",11).attr("fill",INK).text(`data centers →   (correlation ${rFacAll.toFixed(2)})`);
+  const rLabR = gSplit.append("text").attr("x",(Rx0+Rx1)/2).attr("y",iy0+38).attr("text-anchor","middle").attr("font-size",11).attr("fill",INK).style("opacity",0).text(`+ reports →   (correlation ${rRepAll.toFixed(2)})`);
+  const bandL = gSplit.append("path").attr("d",regBandPath("total_facilities",xFacL)).attr("fill",BLUE).attr("fill-opacity",0.13).attr("stroke","none").style("opacity",0);
+  const bandR = gSplit.append("path").attr("d",regBandPath("total_with_reports",xRepR)).attr("fill",RED).attr("fill-opacity",0.13).attr("stroke","none").style("opacity",0);
+  const regL = gSplit.append("line").attr("stroke",BLUE).attr("stroke-width",3).attr("stroke-linecap","round").attr("opacity",0);
+  const regR = gSplit.append("line").attr("stroke",RED).attr("stroke-width",3).attr("stroke-linecap","round").attr("opacity",0);
+
+  const gReg = svg.append("g");
+  const bandSingle = gReg.append("path").attr("d",regBandPath("total_facilities",xFacFull)).attr("fill",BLUE).attr("fill-opacity",0.13).attr("stroke","none").style("opacity",0);
+  const regProof = gReg.append("line").attr("stroke",GREEN).attr("stroke-width",3).attr("stroke-linecap","round").attr("opacity",0.92);
+  function drawLine(sel, field, xscale, color) {
+    const {slope,intercept,ex} = linreg(field);
+    sel.transition().duration(D(950)).ease(EASE)
+      .attr("x1",xscale(ex[0])).attr("y1",y(slope*ex[0]+intercept))
+      .attr("x2",xscale(ex[1])).attr("y2",y(slope*ex[1]+intercept)).attr("stroke",color).attr("opacity",0.92);
+  }
+
+  const gScatter = svg.append("g");
+  const dots = gScatter.selectAll("circle").data(dc).join("circle")
+    .attr("cx",d=>xFacFull(d.total_facilities)).attr("cy",d=>y(d.current_jobs)).attr("r",0)
+    .attr("fill",GREEN).attr("fill-opacity",0.62).attr("stroke","#faf7f1").attr("stroke-width",0.8).style("cursor","crosshair")
+    .on("mousemove",(e,d)=>showTip(e,d)).on("mouseleave",hideTip);
+  const gScatterR = svg.append("g").style("opacity",0);
+  const dotsR = gScatterR.selectAll("circle").data(dc).join("circle")
+    .attr("cx",d=>xRepR(d.total_with_reports)).attr("cy",d=>y(d.current_jobs)).attr("r",0)
+    .attr("fill",RED).attr("fill-opacity",0.6).attr("stroke","#faf7f1").attr("stroke-width",0.8).style("cursor","crosshair")
+    .on("mousemove",(e,d)=>showTip(e,d)).on("mouseleave",hideTip);
+
+  // labels for the states worth calling out (the leaders + the big low-facility outlier)
+  const labStates = dc.filter(d => d.total_facilities >= 6 || d.state_abbr === "CA");
+  const gScatLab = svg.append("g").style("opacity",0).attr("pointer-events","none");
+  gScatLab.selectAll("text").data(labStates).join("text")
+    .attr("x",d=>xFacFull(d.total_facilities)).attr("y",d=>y(d.current_jobs)-11).attr("text-anchor","middle")
+    .attr("font-size",10).attr("font-weight",600).attr("fill",INK)
+    .attr("stroke","#fffdf9").attr("stroke-width",2.5).attr("paint-order","stroke").attr("stroke-linejoin","round")
+    .text(d=>d.state_abbr);
+
+  // ============================================================== BARS (interactive)
+  const gBars = svg.append("g").style("opacity",0);
+  const bx0=120, bx1=890, by0=H-64, by1=84;
+  let barMode = "stacked";
+  function renderBars(mode) {
+    barMode = mode;
+    gBars.selectAll("*").remove();
+
+    if (mode === "stacked") {
+      const top = [...dc].sort((a,b)=>(b.current_jobs+b.projected_new_jobs)-(a.current_jobs+a.projected_new_jobs)).slice(0,12);
+      const xb = d3.scaleLinear().domain([0, d3.max(top,d=>d.current_jobs+d.projected_new_jobs)]).range([bx0, bx1-60]);
+      const rowH=(by0-by1)/top.length, barH=rowH*0.6;
+      gBars.append("rect").attr("x",bx0).attr("y",by1-34).attr("width",12).attr("height",12).attr("rx",2).attr("fill",GREEN);
+      gBars.append("text").attr("x",bx0+18).attr("y",by1-24).attr("font-size",11).attr("fill",INK).text("Current jobs");
+      gBars.append("rect").attr("x",bx0+118).attr("y",by1-34).attr("width",12).attr("height",12).attr("rx",2).attr("fill",GOLD).attr("fill-opacity",0.9);
+      gBars.append("text").attr("x",bx0+136).attr("y",by1-24).attr("font-size",11).attr("fill",INK).text("Projected new by 2027");
+      top.forEach((d,i)=>{
+        const yy=by1+i*rowH;
+        gBars.append("text").attr("x",bx0-10).attr("y",yy+barH/2).attr("dy","0.32em").attr("text-anchor","end").attr("font-size",11).attr("font-weight",600).attr("fill",INK).text(d.state_abbr);
+        gBars.append("rect").attr("y",yy).attr("x",bx0).attr("height",barH).attr("rx",3).attr("fill",GREEN).attr("width",0)
+          .transition().duration(D(800)).ease(EASE).delay(D(i*45)).attr("width",xb(d.current_jobs)-bx0);
+        gBars.append("rect").attr("y",yy).attr("x",xb(d.current_jobs)).attr("height",barH).attr("rx",3).attr("fill",GOLD).attr("fill-opacity",0.9).attr("width",0)
+          .transition().duration(D(800)).ease(EASE).delay(D(i*45+200)).attr("width",xb(d.current_jobs+d.projected_new_jobs)-xb(d.current_jobs));
+        gBars.append("text").attr("x",xb(d.current_jobs+d.projected_new_jobs)+8).attr("y",yy+barH/2).attr("dy","0.32em").attr("font-size",10).attr("fill","#8d867c").attr("opacity",0).text(cfmt(d.current_jobs+d.projected_new_jobs))
+          .transition().duration(D(400)).delay(D(i*45+650)).attr("opacity",1);
+      });
+    }
+
+    else if (mode === "scatter") {
+      const data = dc.filter(d=>d.total_facilities>0);
+      const xs = d3.scaleLinear().domain([0,maxFac]).nice().range([bx0,bx1]);
+      const ys = d3.scaleLinear().domain([0,maxJobs]).nice().range([by0,by1]);
+      const rs = d3.scaleSqrt().domain([0,d3.max(dc,d=>d.projected_new_jobs)]).range([4,26]);
+      ys.ticks(5).filter(t=>t>0).forEach(t=>{
+        gBars.append("line").attr("x1",bx0).attr("x2",bx1).attr("y1",ys(t)).attr("y2",ys(t)).attr("stroke","#161512").attr("stroke-opacity",0.07);
+        gBars.append("text").attr("x",bx0-10).attr("y",ys(t)).attr("dy","0.32em").attr("text-anchor","end").attr("font-size",10).attr("fill","#8d867c").text(kfmt(t));
+      });
+      gBars.append("text").attr("x",(bx0+bx1)/2).attr("y",by0+40).attr("text-anchor","middle").attr("font-size",12).attr("font-weight",600).attr("fill",INK).text("Data centers →");
+      gBars.append("text").attr("x",bx1).attr("y",by1-18).attr("text-anchor","end").attr("font-size",10).attr("fill","#8d867c").text("bubble size = projected new jobs");
+      gBars.selectAll("circle.sc").data(data).join("circle").attr("class","sc")
+        .attr("cx",d=>xs(d.total_facilities)).attr("cy",d=>ys(d.current_jobs)).attr("r",0)
+        .attr("fill",GREEN).attr("fill-opacity",0.5).attr("stroke",GREEN).attr("stroke-width",1).style("cursor","crosshair")
+        .on("mousemove",(e,d)=>showTip(e,d)).on("mouseleave",hideTip)
+        .transition().duration(D(800)).ease(d3.easeBackOut.overshoot(1.2)).delay((d,i)=>D(i*20)).attr("r",d=>rs(d.projected_new_jobs));
+      gBars.selectAll("text.lbl").data(data.filter(d=>d.total_facilities>=4||d.current_jobs>20000)).join("text").attr("class","lbl")
+        .attr("x",d=>xs(d.total_facilities)).attr("y",d=>ys(d.current_jobs)-rs(d.projected_new_jobs)-3).attr("text-anchor","middle")
+        .attr("font-size",9).attr("font-weight",600).attr("fill",INK).attr("opacity",0).text(d=>d.state_abbr)
+        .transition().duration(D(400)).delay(D(500)).attr("opacity",1);
+    }
+
+    else if (mode === "growth") {
+      const g = dc.filter(d=>d.projected_new_jobs>0&&d.current_jobs>0)
+        .map(d=>({...d, pct:Math.round(d.projected_new_jobs/d.current_jobs*100)}))
+        .sort((a,b)=>b.pct-a.pct).slice(0,15);
+      const xg = d3.scaleLinear().domain([0,d3.max(g,d=>d.pct)]).range([bx0,bx1-50]);
+      const rowH=(by0-by1)/g.length, barH=rowH*0.62;
+      gBars.append("text").attr("x",bx0).attr("y",by1-22).attr("font-size",11).attr("fill",INK).text("Projected new jobs as % of current base →");
+      g.forEach((d,i)=>{
+        const yy=by1+i*rowH;
+        gBars.append("text").attr("x",bx0-10).attr("y",yy+barH/2).attr("dy","0.32em").attr("text-anchor","end").attr("font-size",11).attr("font-weight",600).attr("fill",INK).text(d.state_abbr);
+        gBars.append("rect").attr("x",bx0).attr("y",yy).attr("height",barH).attr("rx",3).attr("fill","#534AB7").attr("fill-opacity",0.85).attr("width",0).style("cursor","crosshair")
+          .on("mousemove",(e)=>showTip(e,d)).on("mouseleave",hideTip)
+          .transition().duration(D(800)).ease(EASE).delay(D(i*40)).attr("width",xg(d.pct)-bx0);
+        gBars.append("text").attr("x",xg(d.pct)+8).attr("y",yy+barH/2).attr("dy","0.32em").attr("font-size",10).attr("fill","#8d867c").attr("opacity",0).text(d.pct+"%")
+          .transition().duration(D(400)).delay(D(i*40+500)).attr("opacity",1);
+      });
+    }
+  }
+
+  // ============================================================== MAP (interactive)
+  const projFull = d3.geoAlbersUsa().fitExtent([[28,96],[W-28,H-92]], statesFC);
+  const pathFull = d3.geoPath(projFull);
+  const RAMP = ["#e9f0ea","#9cc7a9","#4fa069","#1c6b46","#0c3a24"];
+  const rFull = d3.scaleSqrt().domain([0,maxFac]).range([0,30]);
+
+  // derived per-state map data
+  const md = new Map();
+  dc.forEach(d => {
+    const popK = POP[d.state_abbr] || 1;
+    md.set(nm(d), {
+      row:d, jobs:d.current_jobs, reports:d.community_reports,
+      op:d.facilities_operational, con:d.facilities_construction, prop:d.facilities_proposed,
+      facTotal:d.total_facilities,
+      jobsPer100k:+(d.current_jobs/popK*100).toFixed(1),
+      reportsPer100k:+(d.community_reports/popK*100).toFixed(2)
+    });
+  });
+
+  let heatMode="jobs", bubMode="facilities";
+  const facSet = new Set(["op","con","prop"]);
+  const heatVal = m => heatMode==="jobs" ? m.jobs : m.jobsPer100k;
+  const bubVal = m => {
+    if (bubMode==="reports") return m.reports;
+    if (bubMode==="reportsPer100k") return m.reportsPer100k;
+    let s=0; if(facSet.has("op"))s+=m.op; if(facSet.has("con"))s+=m.con; if(facSet.has("prop"))s+=m.prop; return s;
+  };
+  const bubColor = () => {
+    if (bubMode!=="facilities") return PURPLE;
+    const ks=[...facSet]; return ks.length===1 ? FACCOL[ks[0]] : FACCOL.all;
+  };
+
+  const gFull = svg.append("g").style("opacity",0);
+  const fullPaths = gFull.append("g").selectAll("path").data(features).join("path")
+    .attr("d",pathFull).attr("stroke","#fff").attr("stroke-width",0.6).attr("fill","#eceae4").style("cursor","crosshair")
+    .on("mousemove",(e,f)=>showTip(e,(md.get(f.properties.name)||{}).row)).on("mouseleave",hideTip)
+    .on("mouseover",function(e,f){ if(md.get(f.properties.name)) d3.select(this).raise().attr("stroke","#161512").attr("stroke-width",1.6); })
+    .on("mouseout",function(){ d3.select(this).attr("stroke","#fff").attr("stroke-width",0.6); });
+  const cents = features.map(f=>({c:pathFull.centroid(f), name:f.properties.name, m:md.get(f.properties.name)})).filter(o=>o.m&&o.c[0]);
+  const fullBubbles = gFull.append("g").attr("pointer-events","none").selectAll("circle").data(cents).join("circle")
+    .attr("cx",o=>o.c[0]).attr("cy",o=>o.c[1]).attr("r",0).attr("stroke","#fff").attr("stroke-width",1.1);
+
+  const OFF = {"New Jersey":[22,2],"Delaware":[28,11],"Maryland":[38,22],"Connecticut":[26,-4],"Rhode Island":[32,7],"Massachusetts":[40,-11],"New Hampshire":[14,-18],"Vermont":[-6,-22]};
+  const gLabels = gFull.append("g").attr("pointer-events","none");
+  gLabels.selectAll("text").data(cents).join("text")
+    .attr("x",o=>o.c[0]+(OFF[o.name]?OFF[o.name][0]:0)).attr("y",o=>o.c[1]+(OFF[o.name]?OFF[o.name][1]:0))
+    .attr("text-anchor","middle").attr("dy","0.32em").attr("font-size",8.5).attr("font-weight",600)
+    .attr("fill","#161512").attr("stroke","#fff").attr("stroke-width",2).attr("paint-order","stroke").attr("stroke-linejoin","round")
+    .text(o=>o.m.row.state_abbr);
+
+  const legHeat = gFull.append("g").attr("transform",`translate(${ix0},${H-26})`);
+  const legBub  = gFull.append("g").attr("transform",`translate(${ix1-170},${H-30})`);
+  function renderHeat() {
+    const vals = cents.map(o=>heatVal(o.m)), lo=0, hi=d3.max(vals);
+    const color = d3.scaleSequentialSqrt(d3.interpolateRgbBasis(RAMP)).domain([lo,hi]);
+    fullPaths.transition("fill").duration(D(500)).attr("fill",f=>{const m=md.get(f.properties.name); return m?color(heatVal(m)):"#eceae4";});
+    legHeat.selectAll("*").remove();
+    legHeat.append("text").attr("x",0).attr("y",-8).attr("font-size",9.5).attr("letter-spacing",".1em").attr("fill","#8d867c").text(heatMode==="jobs"?"AI / DC JOBS":"JOBS PER 100K");
+    d3.range(40).forEach(i=>legHeat.append("rect").attr("x",i*4).attr("y",0).attr("width",4).attr("height",9).attr("fill",color(lo+(hi-lo)*i/39)));
+    legHeat.append("text").attr("x",0).attr("y",22).attr("font-size",9).attr("fill","#8d867c").text(heatMode==="jobs"?"0":f1(lo));
+    legHeat.append("text").attr("x",160).attr("y",22).attr("text-anchor","end").attr("font-size",9).attr("fill","#8d867c").text(heatMode==="jobs"?kfmt(Math.round(hi/1000)*1000):f1(hi));
+    return color;
+  }
+  function renderBub() {
+    const maxV = d3.max(cents,o=>bubVal(o.m))||1;
+    const r = d3.scaleSqrt().domain([0,maxV]).range([0,34]);
+    const col = bubColor();
+    fullBubbles.attr("fill",col).attr("fill-opacity",0.58).transition("r").duration(D(450)).attr("r",o=>r(bubVal(o.m)));
+    legBub.selectAll("*").remove();
+    let lab = bubMode==="reports" ? "COMMUNITY REPORTS" : bubMode==="reportsPer100k" ? "REPORTS / 100K"
+      : facSet.size===3 ? "FACILITIES (all)" : [...facSet].map(k=>FACLAB[k].toUpperCase()).join(" + ");
+    legBub.append("text").attr("x",90).attr("y",-12).attr("text-anchor","middle").attr("font-size",9.5).attr("letter-spacing",".08em").attr("fill","#8d867c").text(lab);
+    const dec = bubMode==="reportsPer100k";
+    let samples = dec ? [maxV/3,maxV*2/3,maxV].map(v=>+v.toFixed(1)) : maxV<=4 ? [1,maxV] : maxV<=12 ? [1,Math.round(maxV/2),Math.round(maxV)] : [Math.round(maxV/4),Math.round(maxV/2),Math.round(maxV)];
+    let bx=0;
+    samples.filter((v,i,a)=>v>0&&a.indexOf(v)===i).forEach(v=>{
+      const rad=r(v);
+      legBub.append("circle").attr("cx",bx+rad).attr("cy",24-rad).attr("r",rad).attr("fill",col).attr("fill-opacity",0.58).attr("stroke","#fff");
+      legBub.append("text").attr("x",bx+rad).attr("y",38).attr("text-anchor","middle").attr("font-size",9).attr("fill","#8d867c").text(v);
+      bx+=rad*2+20;
+    });
+  }
+  function renderMap(){ renderHeat(); renderBub(); }
+
+  // single state (bubble → shape)
+  const topData = [...dc].sort((a,b)=>b.total_facilities-a.total_facilities)[0];
+  const topFeat = features.find(f=>f.properties.name===nm(topData));
+  const projOne = d3.geoAlbersUsa().fitExtent([[340,150],[620,470]], topFeat);
+  const pathOne = d3.geoPath(projOne);
+  const oneC = pathOne.centroid(topFeat);
+  const jobColorStatic = d3.scaleSequentialSqrt(d3.interpolateRgbBasis(RAMP)).domain([0,maxJobs]);
+  const gSingle = svg.append("g").style("opacity",0);
+  const onePath = gSingle.append("path").attr("d",pathOne(topFeat)).attr("fill",jobColorStatic(topData.current_jobs)).attr("stroke","#fff").attr("stroke-width",1.4).style("opacity",0);
+  const oneBubble = gSingle.append("circle").attr("cx",oneC[0]).attr("cy",oneC[1]).attr("r",0).attr("fill",BLUE).attr("fill-opacity",0.58).attr("stroke","#fff").attr("stroke-width",1.8).attr("filter","url(#soft)");
+  const oneLabel = gSingle.append("text").attr("x",oneC[0]).attr("y",oneC[1]).attr("dy","0.32em").attr("text-anchor","middle").attr("font-size",24).attr("font-weight",800).attr("fill","#fff").style("opacity",0).text(topData.state_abbr);
+
+  // ============================================================== CONTROLS
+  function clearControls(){ gcontrols.classed("on",false).html(""); }
+  function mkRow(label){ const r=gcontrols.append("div").attr("class","gbtn-row"); r.append("span").attr("class","lbl").text(label); return r; }
+  function mkBtn(row,label){ return row.append("button").attr("class","gbtn").text(label); }
+
+  function barsControls(){
+    gcontrols.html("").classed("on",true);
+    const row = mkRow("VIEW");
+    const opts = [["stacked","Most jobs"],["scatter","Data centers vs jobs"],["growth","Fastest growth"]];
+    const btns = opts.map(([m,l])=>mkBtn(row,l).on("click",()=>{ renderBars(m); paint(); }));
+    function paint(){ btns.forEach((b,i)=>b.classed("active",barMode===opts[i][0])); }
+    paint();
+  }
+  function mapControls(){
+    gcontrols.html("").classed("on",true);
+    const r1 = mkRow("HEATMAP");
+    const bJobs = mkBtn(r1,"Total jobs"), bJpc = mkBtn(r1,"Jobs / 100k");
+    const r2 = mkRow("BUBBLES");
+    const bFac = mkBtn(r2,"Data centers"), bRep = mkBtn(r2,"Reports"), bRpc = mkBtn(r2,"Reports / 100k");
+    const r3 = mkRow("BY TYPE");
+    const bOp = mkBtn(r3,"Existing"), bCon = mkBtn(r3,"Building"), bProp = mkBtn(r3,"Proposed");
+    const setA=(b,on,c)=>b.classed("active",false).style("background",on?c:"#fff").style("border-color",on?c:"rgba(22,21,18,.12)").style("color",on?"#fff":"#5a6776");
+    function paint(){
+      setA(bJobs,heatMode==="jobs",GREEN); setA(bJpc,heatMode==="jobsPer100k",GREEN);
+      setA(bFac,bubMode==="facilities",BLUE); setA(bRep,bubMode==="reports",PURPLE); setA(bRpc,bubMode==="reportsPer100k",PURPLE);
+      [[bOp,"op"],[bCon,"con"],[bProp,"prop"]].forEach(([b,k])=>{ b.style("opacity",bubMode==="facilities"?1:0.45); setA(b,bubMode==="facilities"&&facSet.has(k),FACCOL[k]); });
+    }
+    bJobs.on("click",()=>{heatMode="jobs"; renderHeat(); paint();});
+    bJpc.on("click",()=>{heatMode="jobsPer100k"; renderHeat(); paint();});
+    bFac.on("click",()=>{bubMode="facilities"; if(facSet.size===0)["op","con","prop"].forEach(k=>facSet.add(k)); renderBub(); paint();});
+    bRep.on("click",()=>{bubMode="reports"; renderBub(); paint();});
+    bRpc.on("click",()=>{bubMode="reportsPer100k"; renderBub(); paint();});
+    [[bOp,"op"],[bCon,"con"],[bProp,"prop"]].forEach(([b,k])=>b.on("click",()=>{ bubMode="facilities"; facSet.has(k)?facSet.delete(k):facSet.add(k); renderBub(); paint(); }));
+    paint();
+  }
+
+  // ============================================================== SCENES
+  const groups = {grid:gGrid, axis:gAxis, reg:gReg, scatter:gScatter, scatterR:gScatterR, scatLab:gScatLab, split:gSplit, bars:gBars, single:gSingle, full:gFull};
+  function only(keys){
+    const set=new Set(keys);
+    for(const k in groups){ groups[k].transition("vis").duration(D(650)).ease(EASE).style("opacity",set.has(k)?1:0); groups[k].style("pointer-events",set.has(k)?null:"none"); }
+  }
+
+  let current=null;
+  function render(scene){
+    if(scene===current) return;
+    const prev=current; current=scene;
+    if(scene!=="bars" && scene!=="mapUS") clearControls();
+
+    switch(scene){
+      case "proof":
+        only(["grid","axis","reg","scatter","scatLab"]); titleG.transition().duration(D(300)).style("opacity",1);
+        setTitle("01","The hunch",GREEN); singleR.transition().duration(D(300)).style("opacity",0);
+        bandSingle.interrupt().transition("band").duration(D(400)).style("opacity",0);
+        dots.interrupt().transition().duration(D(950)).ease(EASE).delay((d,i)=>D(i*16))
+          .attr("cx",d=>xFacFull(d.total_facilities)).attr("cy",d=>y(d.current_jobs)).attr("r",6).attr("fill",GREEN).attr("fill-opacity",0.62);
+        drawLine(regProof,"total_facilities",xFacFull,GREEN);
+        break;
+      case "correlate":
+        // dots fade back and the regression BAND grows in — this is the actual correlation graph
+        only(["grid","axis","reg","scatter","scatLab"]); titleG.transition().duration(D(300)).style("opacity",1);
+        setTitle("02","A weak link",BLUE);
+        dots.interrupt().transition().duration(D(700)).ease(EASE)
+          .attr("cx",d=>xFacFull(d.total_facilities)).attr("cy",d=>y(d.current_jobs)).attr("r",6).attr("fill",BLUE).attr("fill-opacity",0.2);
+        drawLine(regProof,"total_facilities",xFacFull,BLUE);
+        bandSingle.attr("fill",BLUE).interrupt().transition("band").duration(D(850)).delay(D(150)).style("opacity",1);
+        singleR.text(`correlation ${rFacAll.toFixed(2)}`).transition().duration(D(500)).delay(D(500)).style("opacity",1);
+        break;
+      case "split":
+        only(["grid","split","scatter","scatterR"]); titleG.transition().duration(D(250)).style("opacity",0);
+        dots.interrupt().transition().duration(D(1000)).ease(EASE).delay((d,i)=>D(i*10))
+          .attr("cx",d=>xFacL(d.total_facilities)).attr("cy",d=>y(d.current_jobs)).attr("r",5).attr("fill",BLUE).attr("fill-opacity",0.22);
+        bandL.interrupt().transition("band").duration(D(850)).delay(D(300)).style("opacity",1);
+        drawLine(regL,"total_facilities",xFacL,BLUE);
+        dotsR.interrupt().attr("r",0).transition().duration(D(850)).ease(d3.easeBackOut.overshoot(1.3)).delay((d,i)=>D(300+i*14))
+          .attr("cx",d=>xRepR(d.total_with_reports)).attr("cy",d=>y(d.current_jobs)).attr("r",5).attr("fill-opacity",0.22);
+        bandR.interrupt().transition("band").duration(D(850)).delay(D(550)).style("opacity",1);
+        rLabR.transition().duration(D(500)).delay(D(550)).style("opacity",1);
+        drawLine(regR,"total_with_reports",xRepR,RED);
+        break;
+      case "bars":
+        only(["bars"]); titleG.transition().duration(D(300)).style("opacity",1);
+        setTitle("04","The leaders",GREEN);
+        if(prev!=="bars") renderBars("stacked");
+        barsControls();
+        break;
+      case "mapBubble":
+        only(["single"]); titleG.transition().duration(D(300)).style("opacity",1);
+        setTitle("05","One state",BLUE);
+        onePath.interrupt().transition().duration(D(450)).style("opacity",0);
+        oneLabel.interrupt().transition().duration(D(400)).style("opacity",0);
+        oneBubble.interrupt().attr("cx",oneC[0]).attr("cy",oneC[1]).transition().duration(D(850)).ease(d3.easeBackOut.overshoot(1.4)).attr("r",92);
+        break;
+      case "mapState":
+        only(["single"]); setTitle("06",nm(topData),BLUE);
+        onePath.interrupt().transition().duration(D(800)).ease(EASE).style("opacity",1);
+        oneBubble.interrupt().transition().duration(D(800)).ease(EASE).attr("r",rFull(topData.total_facilities)*2.4+16);
+        oneLabel.interrupt().transition().duration(D(600)).delay(D(300)).style("opacity",1);
+        break;
+      case "mapUS":
+        only(["full"]); setTitle("07","All fifty states",GREEN);
+        // paths stay at opacity 1; the whole gFull group fades in via only() — robust to re-fires
+        fullPaths.interrupt().style("opacity",1);
+        gLabels.interrupt().style("opacity",0).transition("fade").duration(D(600)).delay(D(550)).style("opacity",1);
+        renderHeat();
+        const maxV=d3.max(cents,o=>bubVal(o.m))||1, rr=d3.scaleSqrt().domain([0,maxV]).range([0,34]), col=bubColor();
+        fullBubbles.attr("fill",col).attr("fill-opacity",0.58).interrupt().attr("r",0).transition("r").duration(D(750)).ease(d3.easeBackOut.overshoot(1.3)).delay((d,i)=>D(350+i*18)).attr("r",o=>rr(bubVal(o.m)));
+        legBub.selectAll("*").remove();
+        setTimeout(()=>{ if(current==="mapUS"){ renderBub(); mapControls(); } }, D(900));
+        break;
+    }
+  }
+
+  // ============================================================== STEPS
+  const steps = [
+    {scene:"proof", k:"01", h:"Start with a hunch", p:"Each dot is a state. Data centers run along the bottom, AI jobs up the side. The line points up, so more data centers usually means more jobs. It&rsquo;s messy, though: a few big states like California sit near the top with almost no data centers on record."},
+    {scene:"correlate", k:"02", h:"It&rsquo;s a weak link", p:`Color the same dots and draw the trend. The link is real but loose &mdash; the correlation is only ${rFacAll.toFixed(2)}. Counting buildings by itself doesn&rsquo;t explain where the jobs are.`},
+    {scene:"split", k:"03", h:"Add a second measure", p:`So split the chart in two. The left still counts data centers we have on record. The right adds the places people reported activity. The right side lines up much tighter, and the correlation climbs to ${rRepAll.toFixed(2)}.`},
+    {scene:"bars", k:"04", h:"Who&rsquo;s ahead", p:"A pattern isn&rsquo;t a ranking. These are the states with the most AI jobs today, plus what they&rsquo;ve been promised by 2027. Use the buttons to re-sort by jobs, by data centers, or by growth."},
+    {scene:"mapBubble", k:"05", h:"Down to one state", p:`This circle is one state&rsquo;s data centers. ${nm(topData)} has the most, at ${topData.total_facilities}. On its own, the number is hard to picture.`},
+    {scene:"mapState", k:"06", h:"Put it on the map", p:`Here&rsquo;s ${nm(topData)}. Color shows its jobs, size shows its data centers.`},
+    {scene:"mapUS", k:"07", h:"The whole country", p:"All fifty states. Green is jobs, blue circles are data centers. Switch the map to jobs per person, resize the circles by community reports or by type, or hover a state to read its numbers."}
+  ];
+
+  const stepsCol = root.append("div").attr("class","scrolly-steps");
+  steps.forEach(s=>{ const d=stepsCol.append("div").attr("class","step").attr("data-scene",s.scene); const c=d.append("div").attr("class","step-card"); c.append("span").attr("class","step-k").text("Chapter "+s.k); c.append("h3").html(s.h); c.append("p").html(s.p); });
+
+  const stepNodes = stepsCol.selectAll(".step").nodes();
+  render("proof");
+  if(stepNodes[0]) stepNodes[0].classList.add("is-active");
+
+  // Single source of truth: whichever step is nearest the viewport centre wins.
+  // Avoids the scene-thrash you get firing IntersectionObserver entries one by one.
+  let ticking=false;
+  function update(){
+    ticking=false;
+    const max=document.documentElement.scrollHeight-innerHeight;
+    progress.style("width",(max>0?(scrollY/max)*100:0)+"%");
+    let best=null, bd=Infinity;
+    stepNodes.forEach(n=>{ const r=n.getBoundingClientRect(); const c=r.top+r.height/2; const d=Math.abs(c-innerHeight/2); if(d<bd){ bd=d; best=n; } });
+    if(best){ stepNodes.forEach(n=>n.classList.toggle("is-active",n===best)); render(best.dataset.scene); }
+  }
+  addEventListener("scroll", ()=>{ if(!ticking){ ticking=true; requestAnimationFrame(update); } }, {passive:true});
+  update();
+
+  return root.node();
+})());
 ```
-
-<div class="jd-panel">
-  ${resize((width) => Plot.plot({
-    width,
-    height: 420,
-    marginLeft: 64,
-    marginBottom: 50,
-    marginRight: 20,
-    style: {fontFamily: "Inter, system-ui, sans-serif", fontSize: "13px", background: "transparent", color: "#48443e"},
-    x: {label: "Total documented facilities →", grid: true},
-    y: {
-      domain: [0, maxY],
-      label: "↑ AI / data-center jobs", 
-      grid: true, 
-      tickFormat: d => d >= 1000 ? d/1000 + "k" : d
-    },
-    marks: [
-      Plot.linearRegressionY(dc, {x: "total_facilities", y: "current_jobs", stroke: "#1c6b46", fillOpacity: 0.12}),
-      Plot.dot(dc, {
-        x: "total_facilities",
-        y: "current_jobs",
-        r: 7,
-        fill: "#114a30",
-        fillOpacity: 0.65,
-        stroke: "#faf7f1",
-        strokeWidth: 1.2,
-        tip: true,
-        title: d => `${d.state}\nJobs: ${d.current_jobs.toLocaleString()}\nFacilities: ${d.total_facilities}`
-      }),
-      Plot.text(dc.filter(d => d.total_facilities >= 4 || d.current_jobs > 15000), {
-        x: "total_facilities",
-        y: "current_jobs",
-        text: "state_abbr",
-        dy: -12,
-        fontSize: 10,
-        fontWeight: 600,
-        fill: "#114a30",
-        stroke: "#faf7f1",
-        strokeWidth: 3,
-        paintOrder: "stroke"
-      })
-    ]
-  }))}
-</div>
-
-<p class="jd-cap"><strong>Read it like this:</strong> each dot is a state; the band is the trend. It slopes up and to the right — more data-center facilities consistently coincides with more AI-related employment. The full, dual-variable version of this argument lives on the <a href="./analytics-page-demo">Analytics</a> page.</p>
-
-<section class="jd-sec">
-  <div class="jd-sec-head"><span class="idx">03</span><h2>What You Can Do Here</h2><span class="line"></span></div>
-</section>
-
-<div class="jd-grid2">
-  <a class="jd-tile" href="./analytics-page-demo">
-    <span class="num">Read</span>
-    <span class="t">Analytics</span>
-    <span class="d">The charts that prove the data-center&nbsp;→&nbsp;jobs correlation, plus where the next wave of growth is headed.</span>
-    <span class="go">Open Analytics →</span>
-  </a>
-  <a class="jd-tile" href="./explore-page-demo">
-    <span class="num">Map</span>
-    <span class="t">Explore</span>
-    <span class="d">A live U.S. map — heatmap the states by jobs, then drop bubbles for community reports and facilities.</span>
-    <span class="go">Open Explore →</span>
-  </a>
-  
-</div>
-
-<footer class="jd-footer">
-  <div class="brand">AI&nbsp;Jobs<small>A demo build</small></div>
-  <div class="col">
-    <h4>Pages</h4>
-    <a href="./">Home</a>
-    <a href="./analytics-page-demo">Analytics</a>
-    <a href="./explore-page-demo">Explore</a>
-  </div>
-  <div class="col">
-    <h4>Project</h4>
-    <a href="https://github.com/avalentino717/AI-Jobs">GitHub</a>
-    <a href="https://observablehq.com/@dis-2026-summer/ai-project">Observable</a>
-  </div>
-</footer>
 
 <style>
 :root {
   --jd-ink:#161512; --jd-ink-soft:#48443e; --jd-muted:#8d867c;
-  --jd-paper:#faf7f1; --jd-card:#fffdf9; --jd-line:rgba(22,21,18,.10); --jd-line-strong:rgba(22,21,18,.22);
-  --jd-accent:#1c6b46; --jd-accent-deep:#114a30; --jd-gold:#a8762a;
-  --jd-display:"Exo 2",system-ui,sans-serif;
+  --jd-paper:#faf7f1; --jd-card:#fffdf9; --jd-line:rgba(22,21,18,.10);
+  --jd-accent:#1c6b46;
+  --jd-display:"Exo 2",system-ui,-apple-system,sans-serif;
   --jd-sans:"Inter",system-ui,-apple-system,sans-serif;
 }
 html, body { background: var(--jd-paper); }
 body { font-family: var(--jd-sans); color: var(--jd-ink); -webkit-font-smoothing:antialiased; }
+#observablehq-main { max-width: none; }
 
-.jd-masthead { text-align:center; margin:3.5rem 0 3rem; }
-.jd-masthead .kicker { font:600 12px/1 var(--jd-sans); letter-spacing:.3em; text-transform:uppercase; color:var(--jd-accent); }
-.jd-masthead h1 { font-family:var(--jd-display); font-weight:900; font-size:clamp(3.25rem,10vw,7rem); line-height:.92; letter-spacing:-.025em; margin:.32em 0 .28em; color:var(--jd-ink); max-width:none; background:none; -webkit-text-fill-color:currentColor; }
-.jd-masthead .sub { font:400 1.15rem/1.55 var(--jd-sans); color:var(--jd-ink-soft); max-width:33em; margin:0 auto; }
-.jd-masthead .flourish { width:46px; height:3px; background:var(--jd-accent); margin:1.5rem auto 0; border-radius:2px; }
+.scroll-progress { position:fixed; top:0; left:0; height:3px; width:0; background:var(--jd-accent); z-index:50; transition:width .1s linear; }
 
-.jd-sec { margin:3.25rem 0 1.1rem; }
-.jd-sec-head { display:flex; align-items:center; gap:.95rem; }
-.jd-sec-head .idx { font:600 12px/1 var(--jd-sans); letter-spacing:.14em; color:var(--jd-accent); }
-.jd-sec-head h2 { font-family:var(--jd-display); font-weight:600; font-size:clamp(1.5rem,3.4vw,2.05rem); letter-spacing:-.012em; margin:0; color:var(--jd-ink); white-space:nowrap; }
-.jd-sec-head .line { flex:1; height:1px; background:var(--jd-line); }
+.jd-hero { text-align:center; margin:4rem auto 2rem; max-width:42em; }
+.jd-hero .kicker { font:600 12px/1 var(--jd-sans); letter-spacing:.3em; text-transform:uppercase; color:var(--jd-accent); }
+.jd-hero h1 { font-family:var(--jd-display); font-weight:900; font-size:clamp(2.6rem,7vw,4.8rem); line-height:.98; letter-spacing:-.025em; margin:.35em 0 .35em; color:var(--jd-ink); max-width:none; background:none; -webkit-text-fill-color:currentColor; }
+.jd-hero p { font:400 1.18rem/1.6 var(--jd-sans); color:var(--jd-ink-soft); margin:0 auto; max-width:34em; }
+.jd-hero .flourish { width:46px; height:3px; background:var(--jd-accent); margin:1.7rem auto 1.4rem; border-radius:2px; }
+.jd-hero .down { font:600 11px var(--jd-sans); letter-spacing:.25em; text-transform:uppercase; color:var(--jd-muted); animation:bob 1.8s ease-in-out infinite; display:inline-block; }
+@keyframes bob { 0%,100%{transform:translateY(0);} 50%{transform:translateY(5px);} }
 
-.jd-panel { background:var(--jd-card); border:1px solid var(--jd-line); border-radius:16px; padding:1.6rem 1.8rem;
-  box-shadow:0 1px 2px rgba(22,21,18,.04), 0 24px 48px -34px rgba(22,21,18,.45); }
+.scrolly { display:grid; grid-template-columns:1.35fr 1fr; gap:2rem; position:relative; }
+.scrolly-graphic { position:relative; }
+.gsticky { position:sticky; top:0; height:100vh; display:flex; align-items:center; justify-content:center; }
+.gcard { position:relative; width:100%; background:var(--jd-card); border:1px solid var(--jd-line); border-radius:20px;
+  padding:0.9rem; box-shadow:0 1px 2px rgba(22,21,18,.05), 0 40px 80px -50px rgba(22,21,18,.6); max-height:90vh; display:flex; flex-direction:column; }
+.gcard svg { flex:1; min-height:0; max-height:80vh; }
+.gtip { position:absolute; pointer-events:none; opacity:0; transform:translate(-50%,-100%); background:#fff; border:1px solid var(--jd-line);
+  border-radius:10px; padding:7px 11px; font:500 12px/1.4 var(--jd-sans); color:var(--jd-ink); white-space:nowrap; box-shadow:0 14px 36px rgba(22,21,18,.18); transition:opacity .12s; z-index:5; }
+.gtip b { font-family:var(--jd-display); font-weight:600; font-size:13px; }
+.scroll-hint { position:absolute; bottom:4.5vh; left:50%; transform:translateX(-50%); font:600 10px var(--jd-sans); letter-spacing:.25em; text-transform:uppercase; color:var(--jd-muted); animation:bob 1.8s ease-in-out infinite; }
 
-.jd-cap { font:400 .96rem/1.65 var(--jd-sans); color:var(--jd-muted); max-width:48em; margin:1rem 2px 0; }
-.jd-cap strong { color:var(--jd-ink-soft); font-weight:600; }
-.jd-cap a, .jd-prose a { color:var(--jd-accent); text-underline-offset:2px; }
+.gcontrols { display:flex; flex-direction:column; gap:5px; padding:4px 4px 9px; opacity:0; max-height:0; overflow:hidden; transition:opacity .35s ease; }
+.gcontrols.on { opacity:1; max-height:160px; }
+.gbtn-row { display:flex; gap:6px; align-items:center; flex-wrap:wrap; }
+.gbtn-row .lbl { font:600 10px var(--jd-sans); letter-spacing:.16em; color:var(--jd-muted); min-width:70px; }
+.gbtn { font:500 11px var(--jd-sans); cursor:pointer; border:1px solid var(--jd-line); border-radius:999px; padding:4px 12px; background:#fff; color:#5a6776; transition:background .15s, color .15s, border-color .15s; }
+.gbtn:hover { border-color:rgba(22,21,18,.28); }
+.gbtn.active { background:var(--jd-accent); border-color:var(--jd-accent); color:#fff; }
 
-.jd-prose { font:400 1.08rem/1.72 var(--jd-sans); color:var(--jd-ink-soft); max-width:42em; margin:0; }
-.jd-prose.lead::first-letter { font-family:var(--jd-display); font-weight:900; float:left; font-size:3.5em; line-height:.7; margin:.05em .14em 0 0; color:var(--jd-accent); }
-.jd-prose strong { color:var(--jd-ink); font-weight:600; }
+.scrolly-steps { padding:30vh 0 36vh; }
+.step { min-height:92vh; display:flex; align-items:center; }
+.step-card { background:var(--jd-card); border:1px solid var(--jd-line); border-left:3px solid transparent; border-radius:16px; padding:1.8rem 2rem; max-width:31em;
+  box-shadow:0 1px 2px rgba(22,21,18,.04), 0 24px 48px -34px rgba(22,21,18,.45);
+  opacity:.34; transform:translateY(14px) scale(.985); filter:saturate(.7); transition:opacity .55s ease, transform .55s ease, border-color .55s ease, filter .55s ease; }
+.step.is-active .step-card { opacity:1; transform:none; filter:none; border-left-color:var(--jd-accent); }
+.step-k { font:600 11px var(--jd-sans); letter-spacing:.2em; text-transform:uppercase; color:var(--jd-accent); }
+.step-card h3 { font-family:var(--jd-display); font-weight:600; font-size:clamp(1.6rem,2.6vw,2.15rem); letter-spacing:-.012em; margin:.5rem 0 .75rem; color:var(--jd-ink); }
+.step-card p { font:400 1.08rem/1.72 var(--jd-sans); color:var(--jd-ink-soft); margin:0; }
+.step-card p em { font-style:normal; color:var(--jd-accent); font-weight:600; }
 
-.jd-grid2 { display:grid; grid-template-columns:repeat(2,1fr); gap:1rem; }
-@media (max-width:760px){ .jd-grid3{grid-template-columns:1fr;} }
-.jd-tile { display:flex; flex-direction:column; gap:.5rem; min-height:188px; background:var(--jd-card); border:1px solid var(--jd-line);
-  border-radius:14px; padding:1.35rem 1.4rem; text-decoration:none; color:inherit; transition:transform .18s ease, box-shadow .18s ease, border-color .18s; }
-.jd-tile:hover { transform:translateY(-3px); border-color:var(--jd-line-strong); box-shadow:0 20px 36px -24px rgba(22,21,18,.55); }
-.jd-tile .num { font:600 11px var(--jd-sans); letter-spacing:.18em; color:var(--jd-gold); text-transform:uppercase; }
-.jd-tile .t { font-family:var(--jd-display); font-weight:600; font-size:1.3rem; color:var(--jd-ink); }
-.jd-tile .d { font:400 .92rem/1.55 var(--jd-sans); color:var(--jd-muted); }
-.jd-tile .go { margin-top:auto; font:600 .85rem var(--jd-sans); color:var(--jd-accent); }
+.jd-outro { text-align:center; margin:3rem auto 6rem; max-width:40em; }
+.jd-outro h2 { font-family:var(--jd-display); font-weight:600; font-size:clamp(1.7rem,3vw,2.3rem); color:var(--jd-ink); }
+.jd-outro p { font:400 1.1rem/1.7 var(--jd-sans); color:var(--jd-ink-soft); }
+.jd-outro a { color:var(--jd-accent); font-weight:600; text-underline-offset:2px; }
 
-.jd-footer { margin:4.5rem 0 2rem; border-top:2px solid var(--jd-ink); padding-top:1.4rem;
-  display:flex; gap:4.5rem; flex-wrap:wrap; align-items:flex-start; }
-.jd-footer .brand { font-family:var(--jd-display); font-weight:600; font-size:1.25rem; margin-right:auto; line-height:1.1; }
-.jd-footer .brand small { display:block; font:400 .8rem var(--jd-sans); color:var(--jd-muted); margin-top:.3rem; }
-.jd-footer .col h4 { font:600 11px var(--jd-sans); letter-spacing:.16em; text-transform:uppercase; color:var(--jd-muted); margin:0 0 .7rem; }
-.jd-footer .col a { display:block; padding:3px 0; color:var(--jd-ink-soft); text-decoration:none; font:450 .95rem var(--jd-sans); transition:color .15s; }
-.jd-footer .col a:hover { color:var(--jd-accent); }
+@media (max-width:860px) {
+  .scrolly { display:block; }
+  .gsticky { height:58vh; top:0; }
+  .gcard { max-height:56vh; }
+  .gcard svg { max-height:42vh; }
+  .scrolly-steps { padding:2vh 0 24vh; }
+  .step { min-height:74vh; }
+  .step-card { margin:0 auto; }
+}
+@media (prefers-reduced-motion: reduce) { .jd-hero .down, .scroll-hint { animation:none; } }
 </style>
+
+<section class="jd-outro">
+  <div class="flourish" style="margin:0 auto 1.6rem;width:46px;height:3px;background:var(--jd-accent);border-radius:2px;"></div>
+  <h2>So: where data centers land, jobs mostly follow.</h2>
+  <p>The link is clear once you measure it right. Dig deeper on the <a href="./explore-page-demo">map</a>, the full <a href="./analytics-page-demo">analytics</a>, or the <a href="./analytics-page-demo#the-raw-numbers">raw numbers</a>. Sources: U.S. Bureau of Labor Statistics (2025), Visual Capitalist, and community reports.</p>
+</section>

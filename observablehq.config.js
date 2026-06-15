@@ -1,20 +1,15 @@
 // See https://observablehq.com/framework/config for documentation.
 export default {
   // The app’s title; used in the sidebar and webpage titles.
-  title: "The Overview",
+  title: "AI's Impact on Jobs",
 
-  // The pages and sections in the sidebar. If you don’t specify this option,
-  // all pages will be listed in alphabetical order. Listing pages explicitly
-  // lets you organize them into sections and have unlisted pages.
-  // pages: [
-  //   {
-  //     name: "Examples",
-  //     pages: [
-  //       {name: "Dashboard", path: "/example-dashboard"},
-  //       {name: "Report", path: "/example-report"}
-  //     ]
-  //   }
-  // ],
+  // The pages and sections in the sidebar.
+  pages: [
+    {name: "Overview", path: "/"},
+    {name: "Analytics", path: "/analytics-page-demo"},
+    {name: "Explore the Map", path: "/explore-page-demo"},
+    {name: "Team", path: "/team"}
+  ],
 
   // Content to add to the head of the page, e.g. for a favicon:
   head: '<link rel="icon" href="observable.png" type="image/png" sizes="32x32">',
