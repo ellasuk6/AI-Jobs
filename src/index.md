@@ -12,10 +12,17 @@ toc: false
 import * as topojson from "npm:topojson-client";
 ```
 
+```js
+const heroData = await FileAttachment("./aijobs/dc_jobs_combined.csv").csv({typed: true});
+const heroJobs = d3.format(",")(d3.sum(heroData, d => d.current_jobs));
+const heroNew = d3.format(",")(d3.sum(heroData, d => d.projected_new_jobs));
+```
+
 <section class="jd-hero">
   <span class="kicker">A scrollytelling read</span>
   <h1>AI&rsquo;s Impact on Jobs</h1>
   <p>Billions are going into AI data centers, and every new one is sold on the jobs it will bring. Does the data back that up? Scroll down.</p>
+  <p class="jd-teaser">${heroJobs} jobs today &nbsp;·&nbsp; <strong>+${heroNew} projected by 2027</strong> &nbsp;·&nbsp; 50 states</p>
   <div class="flourish"></div>
   <span class="down">Scroll to begin ↓</span>
 </section>
@@ -106,6 +113,7 @@ display(await (async () => {
   // ============================================================== DOM SHELL
   const svg = d3.create("svg")
     .attr("viewBox", [0,0,W,H]).attr("preserveAspectRatio","xMidYMid meet")
+    .attr("role","img").attr("aria-label","Scrollytelling chart")
     .style("width","100%").style("height","100%").style("font-family","Inter, system-ui, sans-serif");
 
   const root = d3.create("div").attr("class","scrolly");
@@ -372,6 +380,7 @@ display(await (async () => {
   const onePath = gSingle.append("path").attr("d",pathOne(topFeat)).attr("fill",jobColorStatic(topData.current_jobs)).attr("stroke","#fff").attr("stroke-width",1.4).style("opacity",0);
   const oneBubble = gSingle.append("circle").attr("cx",oneC[0]).attr("cy",oneC[1]).attr("r",0).attr("fill",BLUE).attr("fill-opacity",0.58).attr("stroke","#fff").attr("stroke-width",1.8).attr("filter","url(#soft)");
   const oneLabel = gSingle.append("text").attr("x",oneC[0]).attr("y",oneC[1]).attr("dy","0.32em").attr("text-anchor","middle").attr("font-size",24).attr("font-weight",800).attr("fill","#fff").style("opacity",0).text(topData.state_abbr);
+  const oneCap = gSingle.append("text").attr("x",oneC[0]).attr("y",oneC[1]).attr("text-anchor","middle").attr("font-size",15).attr("font-weight",600).attr("fill",INK).style("opacity",0);
 
   // ============================================================== CONTROLS
   function clearControls(){ gcontrols.classed("on",false).html(""); }
@@ -383,7 +392,7 @@ display(await (async () => {
     const row = mkRow("VIEW");
     const opts = [["stacked","Most jobs"],["scatter","Data centers vs jobs"],["growth","Fastest growth"]];
     const btns = opts.map(([m,l])=>mkBtn(row,l).on("click",()=>{ renderBars(m); paint(); }));
-    function paint(){ btns.forEach((b,i)=>b.classed("active",barMode===opts[i][0])); }
+    function paint(){ btns.forEach((b,i)=>b.classed("active",barMode===opts[i][0]).attr("aria-pressed",barMode===opts[i][0])); }
     paint();
   }
   function mapControls(){
@@ -394,7 +403,7 @@ display(await (async () => {
     const bFac = mkBtn(r2,"Data centers"), bRep = mkBtn(r2,"Reports"), bRpc = mkBtn(r2,"Reports / 100k");
     const r3 = mkRow("BY TYPE");
     const bOp = mkBtn(r3,"Existing"), bCon = mkBtn(r3,"Building"), bProp = mkBtn(r3,"Proposed");
-    const setA=(b,on,c)=>b.classed("active",false).style("background",on?c:"#fff").style("border-color",on?c:"rgba(22,21,18,.12)").style("color",on?"#fff":"#5a6776");
+    const setA=(b,on,c)=>b.classed("active",false).attr("aria-pressed",on).style("background",on?c:"#fff").style("border-color",on?c:"rgba(22,21,18,.12)").style("color",on?"#fff":"#5a6776");
     function paint(){
       setA(bJobs,heatMode==="jobs",GREEN); setA(bJpc,heatMode==="jobsPer100k",GREEN);
       setA(bFac,bubMode==="facilities",BLUE); setA(bRep,bubMode==="reports",PURPLE); setA(bRpc,bubMode==="reportsPer100k",PURPLE);
@@ -436,7 +445,7 @@ display(await (async () => {
         only(["grid","axis","reg","scatter","scatLab"]); titleG.transition().duration(D(300)).style("opacity",1);
         setTitle("02","A weak link",BLUE);
         dots.interrupt().transition().duration(D(700)).ease(EASE)
-          .attr("cx",d=>xFacFull(d.total_facilities)).attr("cy",d=>y(d.current_jobs)).attr("r",6).attr("fill",BLUE).attr("fill-opacity",0.2);
+          .attr("cx",d=>xFacFull(d.total_facilities)).attr("cy",d=>y(d.current_jobs)).attr("r",6).attr("fill",BLUE).attr("fill-opacity",0.26);
         drawLine(regProof,"total_facilities",xFacFull,BLUE);
         bandSingle.attr("fill",BLUE).interrupt().transition("band").duration(D(850)).delay(D(150)).style("opacity",1);
         singleR.text(`correlation ${rFacAll.toFixed(2)}`).transition().duration(D(500)).delay(D(500)).style("opacity",1);
@@ -463,15 +472,23 @@ display(await (async () => {
         only(["single"]); titleG.transition().duration(D(300)).style("opacity",1);
         setTitle("05","One state",BLUE);
         onePath.interrupt().transition().duration(D(450)).style("opacity",0);
-        oneLabel.interrupt().transition().duration(D(400)).style("opacity",0);
         oneBubble.interrupt().attr("cx",oneC[0]).attr("cy",oneC[1]).transition().duration(D(850)).ease(d3.easeBackOut.overshoot(1.4)).attr("r",92);
+        oneLabel.interrupt().attr("x",oneC[0]).attr("y",oneC[1]).attr("font-size",46).text(topData.total_facilities)
+          .transition().duration(D(600)).delay(D(250)).style("opacity",1);
+        oneCap.interrupt().attr("y",oneC[1]+92+30).text(`data centers in ${nm(topData)}`)
+          .transition().duration(D(500)).delay(D(450)).style("opacity",1);
         break;
-      case "mapState":
+      case "mapState": {
         only(["single"]); setTitle("06",nm(topData),BLUE);
+        const rState = rFull(topData.total_facilities)*2.4+16;
         onePath.interrupt().transition().duration(D(800)).ease(EASE).style("opacity",1);
-        oneBubble.interrupt().transition().duration(D(800)).ease(EASE).attr("r",rFull(topData.total_facilities)*2.4+16);
-        oneLabel.interrupt().transition().duration(D(600)).delay(D(300)).style("opacity",1);
+        oneBubble.interrupt().transition().duration(D(800)).ease(EASE).attr("r",rState);
+        oneLabel.interrupt().attr("x",oneC[0]).attr("y",oneC[1]).attr("font-size",22).text(topData.state_abbr)
+          .transition().duration(D(600)).delay(D(300)).style("opacity",1);
+        oneCap.interrupt().attr("y",oneC[1]+rState+26).text(`${cfmt(topData.current_jobs)} jobs · ${topData.total_facilities} data centers`)
+          .transition().duration(D(500)).delay(D(400)).style("opacity",1);
         break;
+      }
       case "mapUS":
         only(["full"]); setTitle("07","All fifty states",GREEN);
         // paths stay at opacity 1; the whole gFull group fades in via only() — robust to re-fires
@@ -501,19 +518,30 @@ display(await (async () => {
   steps.forEach(s=>{ const d=stepsCol.append("div").attr("class","step").attr("data-scene",s.scene); const c=d.append("div").attr("class","step-card"); c.append("span").attr("class","step-k").text("Chapter "+s.k); c.append("h3").html(s.h); c.append("p").html(s.p); });
 
   const stepNodes = stepsCol.selectAll(".step").nodes();
+  const strip = h => h.replace(/&rsquo;/g,"’").replace(/&mdash;/g,"—").replace(/&[a-z]+;/g,"");
+
+  // Chapter rail — clickable dots, one per scene, so readers can place themselves and jump.
+  const rail = root.append("div").attr("class","chapter-rail").attr("aria-label","Chapters");
+  const railDots = steps.map((s,i)=> rail.append("button").attr("class","rail-dot").attr("type","button")
+    .attr("aria-label",`Chapter ${s.k}: ${strip(s.h)}`)
+    .on("click",()=>{ const st=stepNodes[i]; const top=st.getBoundingClientRect().top+scrollY-(innerHeight-st.offsetHeight)/2;
+      scrollTo({top, behavior: RM?"auto":"smooth"}); }));
+
   render("proof");
   if(stepNodes[0]) stepNodes[0].classList.add("is-active");
 
-  // Single source of truth: whichever step is nearest the viewport centre wins.
-  // Avoids the scene-thrash you get firing IntersectionObserver entries one by one.
+  // Single source of truth: whichever step is nearest the reading line wins.
+  // (On mobile the graphic is pinned up top, so the reading line sits lower.)
   let ticking=false;
   function update(){
     ticking=false;
     const max=document.documentElement.scrollHeight-innerHeight;
     progress.style("width",(max>0?(scrollY/max)*100:0)+"%");
-    let best=null, bd=Infinity;
-    stepNodes.forEach(n=>{ const r=n.getBoundingClientRect(); const c=r.top+r.height/2; const d=Math.abs(c-innerHeight/2); if(d<bd){ bd=d; best=n; } });
-    if(best){ stepNodes.forEach(n=>n.classList.toggle("is-active",n===best)); render(best.dataset.scene); }
+    const ref = innerHeight*(innerWidth<=860 ? 0.72 : 0.5);
+    let best=null, bi=0, bd=Infinity;
+    stepNodes.forEach((n,i)=>{ const r=n.getBoundingClientRect(); const c=r.top+r.height/2; const d=Math.abs(c-ref); if(d<bd){ bd=d; best=n; bi=i; } });
+    if(best){ stepNodes.forEach(n=>n.classList.toggle("is-active",n===best)); railDots.forEach((dot,i)=>dot.classed("active",i===bi));
+      svg.attr("aria-label", strip(steps[bi].h)+". "+strip(steps[bi].p)); render(best.dataset.scene); }
   }
   addEventListener("scroll", ()=>{ if(!ticking){ ticking=true; requestAnimationFrame(update); } }, {passive:true});
   update();
@@ -562,6 +590,17 @@ body { font-family: var(--jd-sans); color: var(--jd-ink); -webkit-font-smoothing
 .gbtn { font:500 11px var(--jd-sans); cursor:pointer; border:1px solid var(--jd-line); border-radius:999px; padding:4px 12px; background:#fff; color:#5a6776; transition:background .15s, color .15s, border-color .15s; }
 .gbtn:hover { border-color:rgba(22,21,18,.28); }
 .gbtn.active { background:var(--jd-accent); border-color:var(--jd-accent); color:#fff; }
+.gbtn:focus-visible { outline:2px solid var(--jd-accent); outline-offset:2px; }
+
+.jd-teaser { font:600 .98rem/1.55 var(--jd-sans); color:var(--jd-ink); margin:1.3rem auto 0; max-width:30em; }
+.jd-teaser strong { color:var(--jd-accent); }
+
+.chapter-rail { position:fixed; right:20px; top:50%; transform:translateY(-50%); display:flex; flex-direction:column; gap:11px; z-index:40; }
+.rail-dot { width:10px; height:10px; border-radius:50%; border:1.6px solid rgba(22,21,18,.3); background:transparent; padding:0; cursor:pointer;
+  transition:transform .25s ease, background .25s ease, border-color .25s ease; }
+.rail-dot:hover { border-color:var(--jd-accent); transform:scale(1.3); }
+.rail-dot.active { background:var(--jd-accent); border-color:var(--jd-accent); transform:scale(1.35); }
+.rail-dot:focus-visible { outline:2px solid var(--jd-accent); outline-offset:3px; }
 
 .scrolly-steps { padding:30vh 0 36vh; }
 .step { min-height:92vh; display:flex; align-items:center; }
@@ -581,12 +620,20 @@ body { font-family: var(--jd-sans); color: var(--jd-ink); -webkit-font-smoothing
 
 @media (max-width:860px) {
   .scrolly { display:block; }
-  .gsticky { height:58vh; top:0; }
-  .gcard { max-height:56vh; }
-  .gcard svg { max-height:42vh; }
-  .scrolly-steps { padding:2vh 0 24vh; }
-  .step { min-height:74vh; }
+  /* display:contents removes the wrapper box so the sticky graphic's containing
+     block becomes the tall .scrolly — otherwise it only sticks for its own height. */
+  .scrolly-graphic { display:contents; }
+  .gsticky { height:48vh; top:0; background:var(--jd-paper); z-index:2; }
+  .gcard { max-height:46vh; }
+  .gcard svg { max-height:38vh; }
+  .gcontrols.on { max-height:128px; }
+  .gbtn { padding:3px 9px; font-size:10px; }
+  .gbtn-row { gap:4px; }
+  .gbtn-row .lbl { min-width:54px; font-size:9px; }
+  .scrolly-steps { padding:0 0 30vh; position:relative; z-index:1; }
+  .step { min-height:84vh; }
   .step-card { margin:0 auto; }
+  .chapter-rail { display:none; }
 }
 @media (prefers-reduced-motion: reduce) { .jd-hero .down, .scroll-hint { animation:none; } }
 </style>
