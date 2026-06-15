@@ -21,8 +21,8 @@ const heroNew = d3.format(",")(d3.sum(heroData, d => d.projected_new_jobs));
 <section class="jd-hero">
   <span class="kicker">A scrollytelling read</span>
   <h1>AI&rsquo;s Impact on Jobs</h1>
-  <p>Billions are going into AI data centers, and every new one is sold on the jobs it will bring. Does the data back that up? Scroll down.</p>
-  <p class="jd-teaser">${heroJobs} jobs today &nbsp;·&nbsp; <strong>+${heroNew} projected by 2027</strong> &nbsp;·&nbsp; 50 states</p>
+  <p>A state-by-state look at AI and data-center jobs in the United States.</p>
+  <p class="jd-teaser">${heroJobs} jobs today, and ${heroNew} more projected by 2027.</p>
   <div class="flourish"></div>
   <span class="down">Scroll to begin ↓</span>
 </section>
@@ -592,8 +592,7 @@ body { font-family: var(--jd-sans); color: var(--jd-ink); -webkit-font-smoothing
 .gbtn.active { background:var(--jd-accent); border-color:var(--jd-accent); color:#fff; }
 .gbtn:focus-visible { outline:2px solid var(--jd-accent); outline-offset:2px; }
 
-.jd-teaser { font:600 .98rem/1.55 var(--jd-sans); color:var(--jd-ink); margin:1.3rem auto 0; max-width:30em; }
-.jd-teaser strong { color:var(--jd-accent); }
+.jd-teaser { font:500 1rem/1.55 var(--jd-sans); color:var(--jd-ink-soft); margin:1.1rem auto 0; max-width:30em; }
 
 .chapter-rail { position:fixed; right:20px; top:50%; transform:translateY(-50%); display:flex; flex-direction:column; gap:11px; z-index:40; }
 .rail-dot { width:10px; height:10px; border-radius:50%; border:1.6px solid rgba(22,21,18,.3); background:transparent; padding:0; cursor:pointer;
