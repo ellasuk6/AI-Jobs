@@ -33,7 +33,7 @@ toc: false
     <span class="d"><strong>Jobs:</strong>
   <ul style="margin:.4rem 0 0 1.1rem; padding:0; line-height:1.7;">
     <li>Data transformation</li>
-    <li>Website usability editor</li>
+    <li>Website UI editor</li>
     <li>Visualization Interactivity</li>
     <li>Domain host and creator</li>
   </ul>
@@ -47,6 +47,7 @@ toc: false
     <li>Framework Web Page Design + Creation</li>
     <li>Website editor</li>
     <li>Graphics and Visualizations</li>
+    <li>User-testing Improvements</li>
   </ul>
 </span>
   </a>
