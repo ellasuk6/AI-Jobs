@@ -74,7 +74,7 @@ display(await (async () => {
   const xFacL    = d3.scaleLinear().domain([0, maxFac]).nice().range([Lx0, Lx1]);
   const xRepR    = d3.scaleLinear().domain([0, maxRep]).nice().range([Rx0, Rx1]);
 
-  const GREEN="#1c6b46", BLUE="#2456c9", RED="#c0392b", GOLD="#b07a1e", PURPLE="#8b4fc8", INK="#48443e";
+  const GREEN="#1c6b46", BLUE="#2456c9", RED="#c0392b", GOLD="#b07a1e", PURPLE="#8b4fc8", INK="#48443e", BARCUR="#378ADD", BARNEW="#1D9E75";
   const FACCOL = {op:"#3d52a0", con:"#1a6b8a", prop:"#d94f2b", all:BLUE};
   const FACLAB = {op:"Existing", con:"Under construction", prop:"Proposed"};
   const kfmt = d => d >= 1000 ? (d/1000)+"k" : d;
@@ -220,16 +220,16 @@ display(await (async () => {
       const top = [...dc].sort((a,b)=>(b.current_jobs+b.projected_new_jobs)-(a.current_jobs+a.projected_new_jobs)).slice(0,12);
       const xb = d3.scaleLinear().domain([0, d3.max(top,d=>d.current_jobs+d.projected_new_jobs)]).range([bx0, bx1-60]);
       const rowH=(by0-by1)/top.length, barH=rowH*0.6;
-      gBars.append("rect").attr("x",bx0).attr("y",by1-34).attr("width",12).attr("height",12).attr("rx",2).attr("fill",GREEN);
+      gBars.append("rect").attr("x",bx0).attr("y",by1-34).attr("width",12).attr("height",12).attr("rx",2).attr("fill",BARCUR);
       gBars.append("text").attr("x",bx0+18).attr("y",by1-24).attr("font-size",11).attr("fill",INK).text("Current jobs");
-      gBars.append("rect").attr("x",bx0+118).attr("y",by1-34).attr("width",12).attr("height",12).attr("rx",2).attr("fill",GOLD).attr("fill-opacity",0.9);
+      gBars.append("rect").attr("x",bx0+118).attr("y",by1-34).attr("width",12).attr("height",12).attr("rx",2).attr("fill",BARNEW).attr("fill-opacity",0.9);
       gBars.append("text").attr("x",bx0+136).attr("y",by1-24).attr("font-size",11).attr("fill",INK).text("Projected new by 2027");
       top.forEach((d,i)=>{
         const yy=by1+i*rowH;
         gBars.append("text").attr("x",bx0-10).attr("y",yy+barH/2).attr("dy","0.32em").attr("text-anchor","end").attr("font-size",11).attr("font-weight",600).attr("fill",INK).text(d.state_abbr);
-        gBars.append("rect").attr("y",yy).attr("x",bx0).attr("height",barH).attr("rx",3).attr("fill",GREEN).attr("width",0)
+        gBars.append("rect").attr("y",yy).attr("x",bx0).attr("height",barH).attr("rx",3).attr("fill",BARCUR).attr("width",0)
           .transition().duration(D(800)).ease(EASE).delay(D(i*45)).attr("width",xb(d.current_jobs)-bx0);
-        gBars.append("rect").attr("y",yy).attr("x",xb(d.current_jobs)).attr("height",barH).attr("rx",3).attr("fill",GOLD).attr("fill-opacity",0.9).attr("width",0)
+        gBars.append("rect").attr("y",yy).attr("x",xb(d.current_jobs)).attr("height",barH).attr("rx",3).attr("fill",BARNEW).attr("fill-opacity",0.9).attr("width",0)
           .transition().duration(D(800)).ease(EASE).delay(D(i*45+200)).attr("width",xb(d.current_jobs+d.projected_new_jobs)-xb(d.current_jobs));
         gBars.append("text").attr("x",xb(d.current_jobs+d.projected_new_jobs)+8).attr("y",yy+barH/2).attr("dy","0.32em").attr("font-size",10).attr("fill","#8d867c").attr("opacity",0).text(cfmt(d.current_jobs+d.projected_new_jobs))
           .transition().duration(D(400)).delay(D(i*45+650)).attr("opacity",1);
@@ -249,7 +249,7 @@ display(await (async () => {
       gBars.append("text").attr("x",bx1).attr("y",by1-18).attr("text-anchor","end").attr("font-size",10).attr("fill","#8d867c").text("bubble size = projected new jobs");
       gBars.selectAll("circle.sc").data(data).join("circle").attr("class","sc")
         .attr("cx",d=>xs(d.total_facilities)).attr("cy",d=>ys(d.current_jobs)).attr("r",0)
-        .attr("fill",GREEN).attr("fill-opacity",0.5).attr("stroke",GREEN).attr("stroke-width",1).style("cursor","crosshair")
+        .attr("fill",BARCUR).attr("fill-opacity",0.5).attr("stroke","#185FA5").attr("stroke-width",1).style("cursor","crosshair")
         .on("mousemove",(e,d)=>showTip(e,d)).on("mouseleave",hideTip)
         .transition().duration(D(800)).ease(d3.easeBackOut.overshoot(1.2)).delay((d,i)=>D(i*20)).attr("r",d=>rs(d.projected_new_jobs));
       gBars.selectAll("text.lbl").data(data.filter(d=>d.total_facilities>=4||d.current_jobs>20000)).join("text").attr("class","lbl")
@@ -280,7 +280,7 @@ display(await (async () => {
   // ============================================================== MAP (interactive)
   const projFull = d3.geoAlbersUsa().fitExtent([[28,96],[W-28,H-92]], statesFC);
   const pathFull = d3.geoPath(projFull);
-  const RAMP = ["#e9f0ea","#9cc7a9","#4fa069","#1c6b46","#0c3a24"];
+  const RAMP = ["#1a4a2e","#2d7a3a","#52b044","#a8d64a","#f5ec1a","#f5a623","#d94f2b"];
   const rFull = d3.scaleSqrt().domain([0,maxFac]).range([0,30]);
 
   // derived per-state map data
