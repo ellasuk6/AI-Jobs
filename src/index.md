@@ -34,6 +34,9 @@ const dc = FileAttachment("./aijobs/dc_jobs_combined.csv").csv({typed: true});
   <div class="jd-sec-head"><span class="idx">02</span><h2>Proof of Concept</h2><span class="line"></span></div>
 </section>
 
+```js
+const maxY = view(Inputs.range([10000, 90000], {value: 90000, label: "Max jobs (y-axis)", step: 1000}));
+```
 
 <div class="jd-panel">
   ${resize((width) => Plot.plot({
@@ -44,7 +47,12 @@ const dc = FileAttachment("./aijobs/dc_jobs_combined.csv").csv({typed: true});
     marginRight: 20,
     style: {fontFamily: "Inter, system-ui, sans-serif", fontSize: "13px", background: "transparent", color: "#48443e"},
     x: {label: "Total documented facilities →", grid: true},
-    y: {label: "↑ AI / data-center jobs", grid: true, tickFormat: d => d >= 1000 ? d/1000 + "k" : d},
+    y: {
+      domain: [0, maxY],
+      label: "↑ AI / data-center jobs", 
+      grid: true, 
+      tickFormat: d => d >= 1000 ? d/1000 + "k" : d
+    },
     marks: [
       Plot.linearRegressionY(dc, {x: "total_facilities", y: "current_jobs", stroke: "#1c6b46", fillOpacity: 0.12}),
       Plot.dot(dc, {
