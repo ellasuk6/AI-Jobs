@@ -5,10 +5,10 @@ export default {
 
   // The pages and sections in the sidebar.
   pages: [
-    {name: "Overview", path: "/"},
-    {name: "Analytics", path: "/analytics-page-demo"},
+    {name: "Overview", path: "/goal-of-site"},
+    {name: "Follow The Data", path: "/analytics-page-demo"},
     {name: "Explore the Map", path: "/explore-page-demo"},
-    {name: "Team", path: "/team"}
+    {name: "Meet the Team", path: "/team"}
   ],
 
   // Content to add to the head of the page, e.g. for a favicon:

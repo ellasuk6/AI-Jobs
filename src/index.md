@@ -335,17 +335,21 @@ display(await (async () => {
     .attr("fill","#161512").attr("stroke","#fff").attr("stroke-width",2).attr("paint-order","stroke").attr("stroke-linejoin","round")
     .text(o=>o.m.row.state_abbr);
 
-  const legHeat = gFull.append("g").attr("transform",`translate(${ix0},${H-26})`);
-  const legBub  = gFull.append("g").attr("transform",`translate(${ix1-170},${H-30})`);
+  const legBub  = gFull.append("g").attr("transform",`translate(${ix0},${H-30})`);
+  function updateHeatLegend(){
+    const bar = gcontrols.select(".glegend");
+    if (bar.empty()) return;
+    const vals = cents.map(o=>heatVal(o.m)), lo=0, hi=d3.max(vals);
+    bar.select(".glegend-label").text(heatMode==="jobs"?"AI / DC JOBS":"JOBS PER 100K");
+    bar.select(".glegend-lo").text(heatMode==="jobs"?"0":f1(lo));
+    bar.select(".glegend-hi").text(heatMode==="jobs"?kfmt(Math.round(hi/1000)*1000):f1(hi));
+    bar.select(".glegend-bar").style("background",`linear-gradient(to right, ${RAMP.join(",")})`);
+  }
   function renderHeat() {
     const vals = cents.map(o=>heatVal(o.m)), lo=0, hi=d3.max(vals);
     const color = d3.scaleSequentialSqrt(d3.interpolateRgbBasis(RAMP)).domain([lo,hi]);
     fullPaths.transition("fill").duration(D(500)).attr("fill",f=>{const m=md.get(f.properties.name); return m?color(heatVal(m)):"#eceae4";});
-    legHeat.selectAll("*").remove();
-    legHeat.append("text").attr("x",0).attr("y",-8).attr("font-size",9.5).attr("letter-spacing",".1em").attr("fill","#8d867c").text(heatMode==="jobs"?"AI / DC JOBS":"JOBS PER 100K");
-    d3.range(40).forEach(i=>legHeat.append("rect").attr("x",i*4).attr("y",0).attr("width",4).attr("height",9).attr("fill",color(lo+(hi-lo)*i/39)));
-    legHeat.append("text").attr("x",0).attr("y",22).attr("font-size",9).attr("fill","#8d867c").text(heatMode==="jobs"?"0":f1(lo));
-    legHeat.append("text").attr("x",160).attr("y",22).attr("text-anchor","end").attr("font-size",9).attr("fill","#8d867c").text(heatMode==="jobs"?kfmt(Math.round(hi/1000)*1000):f1(hi));
+    updateHeatLegend();
     return color;
   }
   function renderBub() {
@@ -398,24 +402,28 @@ display(await (async () => {
   function mapControls(){
     gcontrols.html("").classed("on",true);
     const r1 = mkRow("HEATMAP");
-    const bJobs = mkBtn(r1,"Total jobs"), bJpc = mkBtn(r1,"Jobs / 100k");
+    const bJpc = mkBtn(r1,"Jobs per 100k"), bJobs = mkBtn(r1,"Total jobs");
     const r2 = mkRow("BUBBLES");
-    const bFac = mkBtn(r2,"Data centers"), bRep = mkBtn(r2,"Reports"), bRpc = mkBtn(r2,"Reports / 100k");
-    const r3 = mkRow("BY TYPE");
-    const bOp = mkBtn(r3,"Existing"), bCon = mkBtn(r3,"Building"), bProp = mkBtn(r3,"Proposed");
+    const bRep = mkBtn(r2,"Community reports"), bFac = mkBtn(r2,"All facilities"),
+          bOp = mkBtn(r2,"Existing"), bCon = mkBtn(r2,"Under construction"), bProp = mkBtn(r2,"Proposed");
+    const legend = gcontrols.append("div").attr("class","glegend");
+    legend.append("span").attr("class","glegend-label");
+    legend.append("span").attr("class","glegend-val glegend-lo");
+    legend.append("div").attr("class","glegend-bar");
+    legend.append("span").attr("class","glegend-val glegend-hi");
     const setA=(b,on,c)=>b.classed("active",false).attr("aria-pressed",on).style("background",on?c:"#fff").style("border-color",on?c:"rgba(22,21,18,.12)").style("color",on?"#fff":"#5a6776");
     function paint(){
       setA(bJobs,heatMode==="jobs",GREEN); setA(bJpc,heatMode==="jobsPer100k",GREEN);
-      setA(bFac,bubMode==="facilities",BLUE); setA(bRep,bubMode==="reports",PURPLE); setA(bRpc,bubMode==="reportsPer100k",PURPLE);
+      setA(bFac,bubMode==="facilities",BLUE); setA(bRep,bubMode==="reports",PURPLE);
       [[bOp,"op"],[bCon,"con"],[bProp,"prop"]].forEach(([b,k])=>{ b.style("opacity",bubMode==="facilities"?1:0.45); setA(b,bubMode==="facilities"&&facSet.has(k),FACCOL[k]); });
     }
     bJobs.on("click",()=>{heatMode="jobs"; renderHeat(); paint();});
     bJpc.on("click",()=>{heatMode="jobsPer100k"; renderHeat(); paint();});
     bFac.on("click",()=>{bubMode="facilities"; if(facSet.size===0)["op","con","prop"].forEach(k=>facSet.add(k)); renderBub(); paint();});
     bRep.on("click",()=>{bubMode="reports"; renderBub(); paint();});
-    bRpc.on("click",()=>{bubMode="reportsPer100k"; renderBub(); paint();});
     [[bOp,"op"],[bCon,"con"],[bProp,"prop"]].forEach(([b,k])=>b.on("click",()=>{ bubMode="facilities"; facSet.has(k)?facSet.delete(k):facSet.add(k); renderBub(); paint(); }));
     paint();
+    updateHeatLegend();
   }
 
   // ============================================================== SCENES
@@ -584,13 +592,18 @@ body { font-family: var(--jd-sans); color: var(--jd-ink); -webkit-font-smoothing
 .scroll-hint { position:absolute; bottom:4.5vh; left:50%; transform:translateX(-50%); font:600 10px var(--jd-sans); letter-spacing:.25em; text-transform:uppercase; color:var(--jd-muted); animation:bob 1.8s ease-in-out infinite; }
 
 .gcontrols { display:flex; flex-direction:column; gap:5px; padding:4px 4px 9px; opacity:0; max-height:0; overflow:hidden; transition:opacity .35s ease; }
-.gcontrols.on { opacity:1; max-height:160px; }
+.gcontrols.on { opacity:1; max-height:200px; }
 .gbtn-row { display:flex; gap:6px; align-items:center; flex-wrap:wrap; }
 .gbtn-row .lbl { font:600 10px var(--jd-sans); letter-spacing:.16em; color:var(--jd-muted); min-width:70px; }
 .gbtn { font:500 11px var(--jd-sans); cursor:pointer; border:1px solid var(--jd-line); border-radius:999px; padding:4px 12px; background:#fff; color:#5a6776; transition:background .15s, color .15s, border-color .15s; }
 .gbtn:hover { border-color:rgba(22,21,18,.28); }
 .gbtn.active { background:var(--jd-accent); border-color:var(--jd-accent); color:#fff; }
 .gbtn:focus-visible { outline:2px solid var(--jd-accent); outline-offset:2px; }
+
+.glegend { display:flex; align-items:center; gap:10px; background:#fff; border:1px solid var(--jd-line); border-radius:999px; padding:8px 18px; margin:2px 2px 6px; box-shadow:0 1px 2px rgba(22,21,18,.05); }
+.glegend-label { font:600 9.5px var(--jd-sans); letter-spacing:.14em; color:var(--jd-muted); white-space:nowrap; }
+.glegend-val { font:500 10.5px var(--jd-sans); color:var(--jd-muted); white-space:nowrap; }
+.glegend-bar { flex:1; height:9px; border-radius:4px; }
 
 .jd-teaser { font:500 1rem/1.55 var(--jd-sans); color:var(--jd-ink-soft); margin:1.1rem auto 0; max-width:30em; }
 
@@ -625,7 +638,7 @@ body { font-family: var(--jd-sans); color: var(--jd-ink); -webkit-font-smoothing
   .gsticky { height:48vh; top:0; background:var(--jd-paper); z-index:2; }
   .gcard { max-height:46vh; }
   .gcard svg { max-height:38vh; }
-  .gcontrols.on { max-height:128px; }
+  .gcontrols.on { max-height:170px; }
   .gbtn { padding:3px 9px; font-size:10px; }
   .gbtn-row { gap:4px; }
   .gbtn-row .lbl { min-width:54px; font-size:9px; }
