@@ -653,5 +653,5 @@ body { font-family: var(--jd-sans); color: var(--jd-ink); -webkit-font-smoothing
 <section class="jd-outro">
   <div class="flourish" style="margin:0 auto 1.6rem;width:46px;height:3px;background:var(--jd-accent);border-radius:2px;"></div>
   <h2>So: where data centers land, jobs mostly follow.</h2>
-  <p>The link is clear once you measure it right. Dig deeper on the <a href="./explore-page-demo">map</a>, the full <a href="./analytics-page-demo">analytics</a>, or the <a href="./analytics-page-demo#the-raw-numbers">raw numbers</a>. Sources: U.S. Bureau of Labor Statistics (2025), Visual Capitalist, and community reports.</p>
+  <p>The link is clear once you measure it right. Dig deeper on the <a href="./explore-page-demo">map</a>, the full <a href="./analytics-page-demo">analytics</a>, or the <a href="./analytics-page-demo#the-raw-numbers">raw numbers</a>. Learn more about the <a href="./team">team</a> if you enjoyed. Sources: U.S. Bureau of Labor Statistics (2025), Visual Capitalist, and community reports.</p>
 </section>
