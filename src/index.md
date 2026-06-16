@@ -110,6 +110,153 @@ display(await (async () => {
     return d3.area().x(p=>xscale(p.x)).y0(p=>y(p.lo)).y1(p=>y(p.hi))(pts);
   }
 
+  // ============================== EXPLORE MAP — 1:1 copy of the Map page's map ==============================
+  function buildExploreMap(raw, us) {
+    const width = 960, mapH = 500, legH = 120, totalH = mapH + legH;
+    const fmt = d3.format(","), fmt1 = d3.format(".1f");
+    const pop = {
+      AK:733, AL:5040, AR:3012, AZ:7280, CA:39029, CO:5840, CT:3616, DE:1018,
+      FL:22610, GA:10912, HI:1440, IA:3200, ID:1940, IL:12582, IN:6790, KS:2938,
+      KY:4526, LA:4624, MA:6982, MD:6165, ME:1385, MI:10034, MN:5717, MO:6178,
+      MS:2961, MT:1123, NC:10699, ND:779, NE:1961, NH:1395, NJ:9261, NM:2114,
+      NV:3178, NY:19336, OH:11756, OK:3960, OR:4240, PA:13002, RI:1094, SC:5283,
+      SD:909, TN:7051, TX:30030, UT:3380, VA:8683, VT:647, WA:7740, WI:5896,
+      WV:1775, WY:581
+    };
+    const N = NAME;
+    const data = raw.filter(d => pop[d.state_abbr]).map(d => {
+      const popK = pop[d.state_abbr];
+      const jobs = d.current_jobs, reports = d.community_reports ?? 0;
+      const op = d.facilities_operational ?? 0, con = d.facilities_construction ?? 0, prop = d.facilities_proposed ?? 0;
+      return { abbr:d.state_abbr, state:N[d.state_abbr] ?? d.state, jobs, reports, op, con, prop,
+        facTotal:op+con+prop, jobsPer100k:+(jobs/popK*100).toFixed(1) };
+    });
+    const sts = topojson.feature(us, us.objects.states).features;
+    const projection = d3.geoAlbersUsa().fitSize([width, mapH], topojson.feature(us, us.objects.states));
+    const path = d3.geoPath(projection);
+    const byName = new Map(data.map(d => [d.state, d]));
+    const RAMP2 = ["#1a4a2e","#2d7a3a","#52b044","#a8d64a","#f5ec1a","#f5a623","#d94f2b"];
+    const COMMUNITY = {fill:"#8b4fc8", stroke:"rgba(255,255,255,0.5)"};
+    const FAC = {
+      op:{label:"Existing", fill:"#3d52a0", stroke:"rgba(255,255,255,0.5)"},
+      con:{label:"Under construction", fill:"#1a6b8a", stroke:"rgba(255,255,255,0.5)"},
+      prop:{label:"Proposed", fill:"#d94f2b", stroke:"rgba(255,255,255,0.5)"}
+    };
+    let heatMode = "jobsPer100k", bubMode = "reports";
+    const facSet = new Set();
+    const bubVal = d => {
+      if (bubMode === "reports") return d.reports;
+      let s = 0; if (facSet.has("op")) s+=d.op; if (facSet.has("con")) s+=d.con; if (facSet.has("prop")) s+=d.prop; return s;
+    };
+    const bubColor = () => {
+      if (bubMode !== "facilities") return COMMUNITY;
+      const ks = [...facSet];
+      if (ks.length === 1) return FAC[ks[0]];
+      return {fill:"#d4a017", stroke:"rgba(120,80,0,0.85)"};
+    };
+    const container = d3.create("div")
+      .style("font-family","ui-monospace, SFMono-Regular, Menlo, monospace")
+      .style("color","#2a3441").style("background","#f5f7fa")
+      .style("padding","16px").style("border-radius","14px").style("position","relative").style("border","1px solid #e2e8f0");
+    const mkBtn = (parent, label) => parent.append("button").text(label)
+      .style("font-family","inherit").style("font-size","11px").style("cursor","pointer")
+      .style("border","1px solid #d4dae1").style("border-radius","999px")
+      .style("padding","5px 13px").style("background","#ffffff").style("color","#5a6776").style("transition","background .18s, color .18s");
+    const dotBtn = (btn, hex) => { const t = btn.node().textContent;
+      btn.node().innerHTML = `<span style="display:inline-block;width:7px;height:7px;border-radius:50%;background:${hex};margin-right:5px;vertical-align:middle"></span>${t}`; };
+    const row1 = container.append("div").style("margin-bottom","7px").style("display","flex").style("gap","8px").style("align-items","center");
+    row1.append("span").text("HEATMAP").style("font-size","10px").style("letter-spacing",".2em").style("color","#6b7787").style("min-width","78px");
+    const btnJobsPC = mkBtn(row1,"Jobs per 100k"), btnJobsTot = mkBtn(row1,"Total jobs");
+    const row2 = container.append("div").style("margin-bottom","11px").style("display","flex").style("gap","8px").style("align-items","center").style("flex-wrap","wrap");
+    row2.append("span").text("BUBBLES").style("font-size","10px").style("letter-spacing",".2em").style("color","#6b7787").style("min-width","78px");
+    const btnRepRaw = mkBtn(row2,"Community reports"), btnFacAll = mkBtn(row2,"All facilities"),
+          btnOp = mkBtn(row2,"Existing"), btnCon = mkBtn(row2,"Under construction"), btnProp = mkBtn(row2,"Proposed");
+    dotBtn(btnRepRaw, COMMUNITY.fill); dotBtn(btnFacAll, "#d4a017"); dotBtn(btnOp, FAC.op.fill); dotBtn(btnCon, FAC.con.fill); dotBtn(btnProp, FAC.prop.fill);
+    const legRow = container.append("div").style("display","flex").style("align-items","center").style("gap","8px")
+      .style("margin-bottom","8px").style("padding","6px 10px").style("background","#ffffff").style("border-radius","8px").style("border","0.5px solid #e2e8f0");
+    const heatLabel = legRow.append("span").style("font-size","10px").style("letter-spacing",".12em").style("color","#6b7787").style("min-width","90px");
+    const heatLo = legRow.append("span").style("font-size","10px").style("color","#6b7787").style("min-width","32px").style("text-align","right");
+    const rampCanvas = legRow.append("canvas").attr("width",200).attr("height",12).style("border-radius","3px").style("flex-shrink","0");
+    const heatHi = legRow.append("span").style("font-size","10px").style("color","#6b7787").style("min-width","32px");
+    const mapSvg = container.append("svg").attr("viewBox",[0,0,width,totalH]).style("width","100%").style("height","auto").style("background","#ffffff").style("border-radius","10px");
+    const tip = container.append("div").style("position","absolute").style("pointer-events","none").style("opacity",0)
+      .style("transform","translate(-50%,-115%)").style("background","#ffffff").style("border","1px solid #1f2a36").style("border-radius","10px")
+      .style("padding","9px 12px").style("font-size","12px").style("color","#1a2230").style("white-space","nowrap").style("box-shadow","0 14px 36px rgba(0,0,0,.35)").style("z-index","10");
+    const show = (event, name) => {
+      const d = byName.get(name); if (!d) return;
+      const [mx,my] = d3.pointer(event, container.node());
+      tip.style("left",mx+"px").style("top",my+"px").style("opacity",1)
+        .html(`<b style="font-size:13px">${name}</b><br>
+          Current jobs: ${d.jobs != null ? fmt(d.jobs) : "&mdash;"}<br>
+          Per 100k: ${d.jobsPer100k != null ? fmt1(d.jobsPer100k) : "&mdash;"}<br>
+          <span style="color:#3d52a0">Existing: ${d.op}</span><br>
+          <span style="color:#1a6b8a">Building: ${d.con}</span><br>
+          <span style="color:#d94f2b">Proposed: ${d.prop}</span><br>
+          <span style="color:#8b4fc8">Community reports: ${d.reports}</span><br>
+          Total data centers: ${d.facTotal + d.reports}`);
+      const match = sts.find(f => f.properties.name === name);
+      if (match) { const [cx,cy] = path.centroid(match); hoverLabel.attr("x",cx).attr("y",cy).text(d.abbr).style("opacity",1); }
+    };
+    const hide = () => { tip.style("opacity",0); hoverLabel.style("opacity",0); };
+    const statePaths = mapSvg.append("g").selectAll("path").data(sts).join("path")
+      .attr("d",path).attr("stroke","#ffffff").attr("stroke-width",0.6).style("cursor","pointer")
+      .on("mousemove",(e,f)=>show(e,f.properties.name))
+      .on("mouseover",function(e,f){ if (byName.get(f.properties.name)) d3.select(this).raise().attr("stroke","#1a2733").attr("stroke-width",1.8); })
+      .on("mouseleave",function(){ d3.select(this).attr("stroke","#ffffff").attr("stroke-width",0.6); hide(); });
+    const bubbleG = mapSvg.append("g");
+    const hoverLabel = mapSvg.append("text").attr("text-anchor","middle").attr("dominant-baseline","middle")
+      .attr("font-size",11).attr("font-weight",700).attr("fill","#1a2733").attr("stroke","#ffffff").attr("stroke-width",3).attr("paint-order","stroke")
+      .style("pointer-events","none").style("opacity",0);
+    function renderHeatLegend() {
+      const vals = data.map(d=>d[heatMode]); const lo = d3.min(vals), hi = d3.max(vals);
+      const color = d3.scaleSequentialSqrt(d3.interpolateRgbBasis(RAMP2)).domain([lo,hi]);
+      heatLabel.text(heatMode==="jobsPer100k" ? "JOBS PER 100K" : "TOTAL JOBS");
+      heatLo.text(heatMode==="jobsPer100k" ? fmt1(lo) : fmt(lo));
+      heatHi.text(heatMode==="jobsPer100k" ? fmt1(hi) : fmt(hi));
+      const ctx = rampCanvas.node().getContext("2d"); ctx.clearRect(0,0,200,12);
+      for (let i=0;i<200;i++){ ctx.fillStyle = color(lo+(i/199)*(hi-lo)); ctx.fillRect(i,0,1,12); }
+      statePaths.transition().duration(420).attr("fill", f => { const d = byName.get(f.properties.name); return (d && d[heatMode] != null) ? color(d[heatMode]) : "#e6e9ee"; });
+    }
+    function renderBubbles() {
+      const maxVal = d3.max(data, bubVal)||1; const r = d3.scaleSqrt().domain([0,maxVal]).range([0,32]);
+      const {fill,stroke} = bubColor();
+      const cents = sts.map(f=>({name:f.properties.name, c:path.centroid(f), d:byName.get(f.properties.name)})).filter(o=>o.d && o.c[0]);
+      bubbleG.selectAll("circle").data(cents).join("circle")
+        .attr("cx",o=>o.c[0]).attr("cy",o=>o.c[1]).attr("fill",fill).attr("fill-opacity",0.82).attr("stroke",stroke).attr("stroke-width",1.8).style("cursor","pointer")
+        .on("mousemove",(e,o)=>show(e,o.name)).on("mouseleave",hide).transition().duration(420).attr("r",o=>r(bubVal(o.d)));
+      mapSvg.selectAll(".bub-leg").remove();
+      const legG = mapSvg.append("g").attr("class","bub-leg").attr("transform",`translate(40,${mapH+18})`);
+      const labelMap = {op:"EXISTING", con:"UNDER CONSTRUCTION", prop:"PROPOSED"};
+      const label = bubMode==="reports" ? "COMMUNITY REPORTS" : (facSet.size===0 ? "FACILITIES (none selected)" : [...facSet].map(k=>labelMap[k]).join(" + "));
+      legG.append("text").attr("x",0).attr("y",0).attr("fill","#5a6776").attr("font-size",10).attr("letter-spacing",".1em").text(label);
+      const maxR = 32; let samples;
+      if (maxVal<=4) samples=[1,maxVal]; else if (maxVal<=12) samples=[1,Math.round(maxVal/2),Math.round(maxVal)]; else samples=[Math.round(maxVal/4),Math.round(maxVal/2),Math.round(maxVal)];
+      const baseY = 14+maxR; let bx = 0;
+      samples.filter((v,i,a)=>v>0&&a.indexOf(v)===i).forEach(v => { const rad = r(v);
+        legG.append("circle").attr("cx",bx+rad).attr("cy",baseY+(maxR-rad)).attr("r",rad).attr("fill",fill).attr("fill-opacity",0.82).attr("stroke",stroke).attr("stroke-width",1.2);
+        legG.append("text").attr("x",bx+rad).attr("y",baseY+maxR+13).attr("text-anchor","middle").attr("fill","#5a6776").attr("font-size",9).text(v);
+        bx += rad*2+18; });
+    }
+    function updateButtons() {
+      [[btnJobsPC,"jobsPer100k"],[btnJobsTot,"jobs"]].forEach(([b,m]) => {
+        b.style("background", heatMode===m ? "#2d7a3a" : "#ffffff").style("color", heatMode===m ? "#ffffff" : "#5a6776").style("border", heatMode===m ? "1px solid #2d7a3a" : "1px solid #d4dae1"); });
+      const repActive = bubMode==="reports";
+      btnRepRaw.style("background", repActive ? "#8b4fc822" : "#ffffff").style("color", repActive ? "#8b4fc8" : "#5a6776").style("border", repActive ? "1px solid #8b4fc866" : "1px solid #d4dae1");
+      const allOn = bubMode==="facilities" && facSet.size===3;
+      btnFacAll.style("background", allOn ? "#d4a01722" : "#ffffff").style("color", allOn ? "#d4a017" : "#5a6776").style("border", allOn ? "1px solid #d4a01766" : "1px solid #d4dae1");
+      [[btnOp,"op"],[btnCon,"con"],[btnProp,"prop"]].forEach(([b,k]) => { const on = bubMode==="facilities" && facSet.has(k);
+        b.style("background", on ? FAC[k].fill+"22" : "#ffffff").style("color", on ? FAC[k].fill : "#5a6776").style("border", on ? `1px solid ${FAC[k].fill}66` : "1px solid #d4dae1"); });
+    }
+    function renderAll() { updateButtons(); renderHeatLegend(); renderBubbles(); }
+    btnJobsPC.on("click", () => { heatMode="jobsPer100k"; renderAll(); });
+    btnJobsTot.on("click", () => { heatMode="jobs"; renderAll(); });
+    btnRepRaw.on("click", () => { bubMode="reports"; facSet.clear(); renderAll(); });
+    btnFacAll.on("click", () => { bubMode="facilities"; facSet.clear(); ["op","con","prop"].forEach(k=>facSet.add(k)); renderAll(); });
+    [[btnOp,"op"],[btnCon,"con"],[btnProp,"prop"]].forEach(([b,k]) => { b.on("click", () => { bubMode="facilities"; facSet.has(k)?facSet.delete(k):facSet.add(k); renderAll(); }); });
+    renderAll();
+    return container.node();
+  }
+
   // ============================================================== DOM SHELL
   const svg = d3.create("svg")
     .attr("viewBox", [0,0,W,H]).attr("preserveAspectRatio","xMidYMid meet")
@@ -124,6 +271,8 @@ display(await (async () => {
   const gcontrols = gcard.append("div").attr("class","gcontrols");
   gcard.node().appendChild(svg.node());
   const tip = gcard.append("div").attr("class","gtip");
+  const mapBox = gcard.append("div").attr("class","explore-mapbox");
+  mapBox.node().appendChild(buildExploreMap(dc, us));
   sticky.append("div").attr("class","scroll-hint").html("scroll&nbsp;↓");
 
   const defs = svg.append("defs");
@@ -437,7 +586,8 @@ display(await (async () => {
   function render(scene){
     if(scene===current) return;
     const prev=current; current=scene;
-    if(scene!=="bars" && scene!=="mapUS") clearControls();
+    gcard.classed("map-mode", scene==="mapUS");
+    if(scene!=="bars") clearControls();
 
     switch(scene){
       case "proof":
@@ -498,15 +648,10 @@ display(await (async () => {
         break;
       }
       case "mapUS":
-        only(["full"]); setTitle("07","All fifty states",GREEN);
-        // paths stay at opacity 1; the whole gFull group fades in via only() — robust to re-fires
-        fullPaths.interrupt().style("opacity",1);
-        gLabels.interrupt().style("opacity",0).transition("fade").duration(D(600)).delay(D(550)).style("opacity",1);
-        renderHeat();
-        const maxV=d3.max(cents,o=>bubVal(o.m))||1, rr=d3.scaleSqrt().domain([0,maxV]).range([0,34]), col=bubColor();
-        fullBubbles.attr("fill",col).attr("fill-opacity",0.58).interrupt().attr("r",0).transition("r").duration(D(750)).ease(d3.easeBackOut.overshoot(1.3)).delay((d,i)=>D(350+i*18)).attr("r",o=>rr(bubVal(o.m)));
-        legBub.selectAll("*").remove();
-        setTimeout(()=>{ if(current==="mapUS"){ renderBub(); mapControls(); } }, D(900));
+        // Final scene = 1:1 copy of the Map page's map (shown by the .map-mode class set above,
+        // which swaps the integrated chart for .explore-mapbox). Hide the integrated layers + fade in.
+        only([]); titleG.transition().duration(D(300)).style("opacity",0);
+        mapBox.style("opacity",0); requestAnimationFrame(()=>mapBox.transition("mb").duration(D(450)).style("opacity",1));
         break;
     }
   }
@@ -519,7 +664,7 @@ display(await (async () => {
     {scene:"bars", k:"04", h:"Who&rsquo;s ahead", p:"A pattern isn&rsquo;t a ranking. These are the states with the most AI jobs today, plus what they&rsquo;ve been promised by 2027. Use the buttons to re-sort by jobs, by data centers, or by growth."},
     {scene:"mapBubble", k:"05", h:"Down to one state", p:`This circle is one state&rsquo;s data centers. ${nm(topData)} has the most, at ${topData.total_facilities}. On its own, the number is hard to picture.`},
     {scene:"mapState", k:"06", h:"Put it on the map", p:`Here&rsquo;s ${nm(topData)}. Color shows its jobs, size shows its data centers.`},
-    {scene:"mapUS", k:"07", h:"The whole country", p:"All fifty states. Green is jobs, blue circles are data centers. Switch the map to jobs per person, resize the circles by community reports or by type, or hover a state to read its numbers."}
+    {scene:"mapUS", k:"07", h:"The whole country", p:"All fifty states — the same map as the Explore page. The color is AI jobs per 100k people; the purple bubbles are community reports. Switch to total jobs, resize the bubbles by data-center type, or hover any state for the full breakdown."}
   ];
 
   const stepsCol = root.append("div").attr("class","scrolly-steps");
@@ -586,6 +731,12 @@ body { font-family: var(--jd-sans); color: var(--jd-ink); -webkit-font-smoothing
 .gcard { position:relative; width:100%; background:var(--jd-card); border:1px solid var(--jd-line); border-radius:20px;
   padding:0.9rem; box-shadow:0 1px 2px rgba(22,21,18,.05), 0 40px 80px -50px rgba(22,21,18,.6); max-height:90vh; display:flex; flex-direction:column; }
 .gcard svg { flex:1; min-height:0; max-height:80vh; }
+/* The Map-page map is a fixed-height component; let the card size to it (no clipping)
+   rather than overlay it on a shorter card. box-sizing stops the 16px padding overflowing. */
+.explore-mapbox { display:none; width:100%; box-sizing:border-box; padding:0.2rem; }
+.explore-mapbox > div { box-sizing:border-box; width:100%; }
+.gcard.map-mode > svg, .gcard.map-mode .gcontrols { display:none; }
+.gcard.map-mode .explore-mapbox { display:block; }
 .gtip { position:absolute; pointer-events:none; opacity:0; transform:translate(-50%,-100%); background:#fff; border:1px solid var(--jd-line);
   border-radius:10px; padding:7px 11px; font:500 12px/1.4 var(--jd-sans); color:var(--jd-ink); white-space:nowrap; box-shadow:0 14px 36px rgba(22,21,18,.18); transition:opacity .12s; z-index:5; }
 .gtip b { font-family:var(--jd-display); font-weight:600; font-size:13px; }
@@ -638,7 +789,13 @@ body { font-family: var(--jd-sans); color: var(--jd-ink); -webkit-font-smoothing
   .gsticky { height:48vh; top:0; background:var(--jd-paper); z-index:2; }
   .gcard { max-height:46vh; }
   .gcard svg { max-height:38vh; }
+<<<<<<< HEAD
+  /* the 1:1 Map-page map is tall; let the pinned card scroll it on small screens */
+  .gcard.map-mode { overflow-y:auto; -webkit-overflow-scrolling:touch; }
+  .gcontrols.on { max-height:128px; }
+=======
   .gcontrols.on { max-height:170px; }
+>>>>>>> 515b2e3e70563c1a4e9030a62ed0d36d6903d87d
   .gbtn { padding:3px 9px; font-size:10px; }
   .gbtn-row { gap:4px; }
   .gbtn-row .lbl { min-width:54px; font-size:9px; }
