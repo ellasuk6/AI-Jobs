@@ -5,8 +5,9 @@
     "clean": "rimraf src/.observablehq/cache",
     "build": "observable build",
     "dev": "observable preview",
-    "deploy": "observable deploy",
-    "observable": "observable"
+    "deploy": "npm run build && wrangler deploy",
+    "observable": "observable",
+    "preview": "npm run build && wrangler dev"
   },
   "dependencies": {
     "@observablehq/framework": "^1.13.4",
@@ -14,7 +15,8 @@
     "d3-time-format": "^4.1.0"
   },
   "devDependencies": {
-    "rimraf": "^5.0.5"
+    "rimraf": "^5.0.5",
+    "wrangler": "^4.100.0"
   },
   "engines": {
     "node": ">=18"
